@@ -42,7 +42,7 @@ In the desktop app: click + next to the prompt box, then Plugins, Add marketplac
 | Site | Drawing | Surfaces |
 | --- | --- | --- |
 | Your prompt | Current-line bubble with a rounded accent border, right-aligned | terminal, desktop, vscode |
-| Claude's reply | Bat avatar (spark with spooky off) + rounded comment-colored card around the reply | terminal, desktop, vscode |
+| Claude's reply | Bat avatar (spark with spooky off) + rounded comment-colored card; the markdown inside in Dracula colors (purple headings, orange bold, yellow italic, green code, cyan links and list markers) with Dracula syntax colors in code blocks | terminal, desktop, vscode |
 | Tool calls | Status dot (orange running, green done, red error, gray stopped), tool in cyan, first argument in comment gray | terminal, desktop, vscode |
 | Tool results | The usual result, hung from a gutter mark (red on errors) | terminal, desktop, vscode |
 | Working line | Segmented progress line in the accent; pink label like "Lurking…" or "Haunting…" | terminal, desktop, vscode |

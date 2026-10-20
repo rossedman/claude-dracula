@@ -36,7 +36,7 @@ test('the reply is drawn in its card, on every surface', async ($, on) => {
 
   for (const surface of SURFACES) {
     const ui = await $.ui.mount(reply(surface))
-    expect(await ui.find({ type: 'Markdown' })).toBeTruthy()
+    expect(await ui.find({ type: 'Text', text: 'Claude' })).toBeTruthy()
     expect(await ui.find({ type: 'Text', text: /engine/ })).toBeFalsy()
     await ui.unmount()
   }
@@ -183,4 +183,48 @@ test('the organ plays at the end of an answered turn only when sound is on', asy
   await $.turn.complete({ ...turn, agentId: 'sub' })
   expect(played.length - preview).toBe(1)
   expect(played.at(-1)).toContain('sounds/organ.wav')
+})
+
+test('the reply’s markdown is drawn in Dracula colors', async ($, on) => {
+  engine(on)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+
+  const text = [
+    '## Heading',
+    '',
+    'Plain, **bold**, *italic*, `code` and [a link](https://draculatheme.com).',
+    '',
+    '- one',
+    '',
+    '```go',
+    'func main() { fmt.Println("hi", 42, true) } // note',
+    '```',
+    '',
+    '| Column | Value |',
+    '| --- | --- |',
+    '| alpha | 1 |',
+  ].join('\n')
+  const ui = await $.ui.mount({
+    plugin: 'dracula',
+    component: 'AssistantMessage',
+    surface: 'desktop',
+    props: { text, isFirstOfReply: true },
+  })
+  const color = async (match: string | RegExp) => {
+    const text = typeof match === 'string' ? new RegExp(`^${match.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}$`) : match
+    const found = (await ui.find({ type: 'Text', text })) as { props?: { color?: string } } | undefined
+    return found?.props?.color
+  }
+  expect(await color('Heading')).toBe('#BD93F9')
+  expect(await color('bold')).toBe('#FFB86C')
+  expect(await color('italic')).toBe('#F1FA8C')
+  expect(await color('code')).toBe('#50FA7B')
+  expect(await color('a link')).toBe('#8BE9FD')
+  expect(await color('func')).toBe('#FF79C6')
+  expect(await color('Println')).toBe('#50FA7B')
+  expect(await color('"hi"')).toBe('#F1FA8C')
+  expect(await color('// note')).toBe('#6272A4')
+  expect(await color(/^┌─+┬─+┐$/)).toBe('#6272A4')
+  expect(await ui.find({ type: 'Markdown' })).toBeFalsy()
+  await ui.unmount()
 })

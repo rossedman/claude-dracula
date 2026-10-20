@@ -3,6 +3,7 @@ import type { Register } from 'claude-code'
 
 import type { DraculaSettings } from '../types'
 import { batTile, sparkTile } from './icons'
+import { draculaMarkdown } from './markdown'
 import {
   SEGMENTS,
   accents,
@@ -42,6 +43,15 @@ function summarize(input: unknown): string {
     }
   }
   return ''
+}
+
+/** The Dracula drawing, or the engine's plain one should the parse ever throw. */
+function draw(dracula: () => JSX.Element, plain: () => JSX.Element): JSX.Element {
+  try {
+    return dracula()
+  } catch {
+    return plain()
+  }
 }
 
 const HELP = [
@@ -136,11 +146,12 @@ export const register: Register = on => {
     )
   })
 
-  // Claude's reply: a spark (or bat) avatar on the first block, the reply in a rounded card.
+  // Claude's reply: a spark (or bat) avatar on the first block, the reply in a rounded card,
+  // its markdown drawn in Dracula colors.
   on('ui.render', { component: 'AssistantMessage' }, async ($, e, next) => {
     const { enabled, accent, spooky } = await read($, settings)
     if (!enabled || e.props.isSummary) return next(e)
-    const { Box, Markdown, Text } = $.ui.resolve(e)
+    const { Box, Link, Markdown, Text } = $.ui.resolve(e)
     const isTerminal = e.surface === 'terminal'
 
     let avatar: JSX.Element
@@ -162,7 +173,9 @@ export const register: Register = on => {
       <Box flexDirection="row" gap={1}>
         {avatar}
         <Box flexGrow={1} borderStyle="round" borderColor={colors.comment} paddingX={1}>
-          <Markdown text={e.props.text} />
+          {draw(() => draculaMarkdown(e.props.text, { Box, Text, Link }, !isTerminal), () => (
+            <Markdown text={e.props.text} />
+          ))}
         </Box>
       </Box>
     )
