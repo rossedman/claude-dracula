@@ -8,15 +8,14 @@ Output: PNGs in docs/ (desktop and terminal previews, plus an accent strip).
 The claude-dracula parts are drawn exactly from the mod's trees. The window,
 prompt box and fonts around them are a neutral stand-in for the app.
 
-Usage: python3 scripts/screenshots.py <test-output.txt> <out-dir>
+Usage: python3 scripts/screenshots.py <test-output.txt> <out-dir> [--html]
+--html writes the pages as .html beside where the PNGs would go, with no browser.
 """
 import html
 import json
 import sys
 from pathlib import Path
 
-import markdown
-from playwright.sync_api import sync_playwright
 
 DUMP = "DRACULA_DUMP "
 
@@ -65,21 +64,43 @@ def render(node, unit):
             w = "3px" if p["borderStyle"] == "bold" else "1.5px"
             r = "10px" if p["borderStyle"] == "round" else "0"
             s.append(f"border:{w} solid {p.get('borderColor', 'currentColor')};border-radius:{r};padding-top:{unit // 2}px;padding-bottom:{unit // 2}px")
+        if "paddingLeft" in p:
+            s.append(f"padding-left:{space(p['paddingLeft'], unit)}")
+        if "flexShrink" in p:
+            s.append(f"flex-shrink:{p['flexShrink']};min-width:0")
         if "backgroundColor" in p:
             s.append(f"background:{p['backgroundColor']}")
         return f'<div style="{";".join(s)}">{inner}</div>'
+    if t == "Link":
+        return f'<a href="{html.escape(p.get("href", ""))}" style="color:inherit;text-decoration:none">{inner}</a>'
     if t == "Text":
-        s = []
+        s = ["white-space:pre-wrap"]
         if "color" in p:
             s.append(f"color:{p['color']}")
-        if p.get("bold"):
+        if "backgroundColor" in p:
+            s.append(f"background:{p['backgroundColor']}")
+        if p.get("bold") or p.get("weight") in ("semibold", "bold"):
             s.append("font-weight:700")
+        if p.get("italic"):
+            s.append("font-style:italic")
+        if p.get("underline"):
+            s.append("text-decoration:underline")
+        if p.get("strikethrough"):
+            s.append("text-decoration:line-through")
+        if p.get("mono") and unit == 8:
+            s.append("font-family:'DejaVu Sans Mono',ui-monospace,monospace;font-size:13px")
+        if unit == 8 and p.get("size") in ("title", "heading"):
+            s.append("font-size:" + ("20px" if p["size"] == "title" else "17px"))
+        if unit == 8 and p.get("size") == "footnote":
+            s.append("font-size:12px")
         if p.get("dimColor"):
             s.append("opacity:.7")
         if p.get("wrap", "").startswith("truncate"):
             s.append("white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0")
         return f'<span style="{";".join(s)}">{inner}</span>'
     if t == "Markdown":
+        import markdown
+
         return '<div class="md">' + markdown.markdown(p["text"], extensions=["fenced_code"]) + "</div>"
     if t == "Svg":
         w, h = p.get("width", 24), p.get("height", 24)
@@ -103,12 +124,14 @@ def desktop_page(trees, accent):
     body = f"""
 <div style="width:880px;padding:28px 36px 24px;font-family:'DejaVu Sans','Noto Color Emoji',system-ui,sans-serif;font-size:15px;line-height:1.55;background:#1F1E1C">
   <div class="row">{g('user')}</div>
-  <div class="row">{g('tool1')}</div>
+  <div class="row">{g('group')}</div>
   <div class="row">{g('reply')}</div>
   <div class="row">{g('tool2')}</div>
   <div style="margin:-4px 0 10px 4px">{g('result')}</div>
+  <div class="row">{g('edit')}</div>
+  <div style="margin:-4px 0 10px 4px">{g('diff')}</div>
   <div class="row" style="margin-top:14px">{g('spinner')}</div>
-  <div style="margin-top:22px">{g('band')}</div>
+  <div style="margin-top:22px;display:flex;justify-content:space-between">{g('band')}{g('mode')}</div>
   <div style="margin-top:8px;border:1px solid #3a3833;border-radius:14px;padding:14px 16px;color:#8d8a82;background:#2A2926">Reply to Claude…</div>
 </div>"""
     return f"<!doctype html><html><head><meta charset=utf-8><style>{BASE_CSS}</style></head><body>{body}</body></html>"
@@ -119,13 +142,15 @@ def terminal_page(trees, accent):
     body = f"""
 <div style="width:880px;padding:22px 26px;font-family:'DejaVu Sans Mono','Noto Color Emoji',ui-monospace,monospace;font-size:14px;line-height:1.5;background:#282A36;color:#F8F8F2">
   <div class="row">{g('user')}</div>
-  <div class="row">{g('tool1')}</div>
+  <div class="row">{g('group')}</div>
   <div class="row">{g('reply')}</div>
   <div class="row">{g('tool2')}</div>
   <div style="margin:-4px 0 10px 4px">{g('result')}</div>
+  <div class="row">{g('edit')}</div>
+  <div style="margin:-4px 0 10px 4px">{g('diff')}</div>
   <div class="row">{g('turn')}</div>
   <div class="row" style="margin-top:14px">{g('spinner')}</div>
-  <div style="margin-top:16px">{g('band')}</div>
+  <div style="margin-top:16px;display:flex;justify-content:space-between">{g('band')}{g('mode')}</div>
   <div style="margin-top:6px;border:1px solid #44475A;padding:6px 10px;color:#6272A4">&gt; </div>
 </div>"""
     return f"<!doctype html><html><head><meta charset=utf-8><style>{BASE_CSS}</style></head><body>{body}</body></html>"
@@ -151,6 +176,13 @@ def main():
         "terminal.png": terminal_page(trees, "purple"),
         "accents.png": accents_page(trees),
     }
+    if "--html" in sys.argv:
+        for name, doc in pages.items():
+            (out / name.replace(".png", ".html")).write_text(doc)
+            print("wrote", out / name.replace(".png", ".html"))
+        return
+    from playwright.sync_api import sync_playwright
+
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
         page = browser.new_page(device_scale_factor=2)

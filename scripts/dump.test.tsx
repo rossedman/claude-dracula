@@ -41,14 +41,83 @@ const SITES = [
     props: {
       isFirstOfReply: true,
       text:
-        "Here's a compact version. It doubles the delay each attempt, caps it, and adds **full jitter** so retries from many clients don't line up.\n\n" +
+        "## Retry with backoff\n\nHere's a compact version. It doubles the delay each attempt, caps it at `10s`, and adds **full jitter** so retries from *many* clients don't line up.\n\n" +
         '```go\nfunc Retry(ctx context.Context, n int, fn func() error) error {\n\td := 100 * time.Millisecond\n\tfor i := 0; i < n; i++ {\n\t\tif err := fn(); err == nil {\n\t\t\treturn nil\n\t\t}\n\t\tsleep := time.Duration(rand.Int63n(int64(d)))\n\t\tselect {\n\t\tcase <-ctx.Done():\n\t\t\treturn ctx.Err()\n\t\tcase <-time.After(sleep):\n\t\t}\n\t\td = min(d*2, 10*time.Second)\n\t}\n\treturn errors.New("retries exhausted")\n}\n```',
     },
   },
   {
     id: 'result',
     component: 'ToolResult',
-    props: { tool_use_id: 't2', tool: 'Bash', output: { stdout: 'ok' }, isErrored: false },
+    props: {
+      tool_use_id: 't2',
+      tool: 'Bash',
+      output: {
+        stdout: '=== RUN   TestRetry\n--- PASS: TestRetry (0.21s)\nPASS\nok  \texample.com/retry/internal/retry\t0.412s\n',
+        stderr: '',
+        interrupted: false,
+      },
+      isErrored: false,
+    },
+  },
+  {
+    id: 'group',
+    component: 'ToolGroup',
+    props: {
+      isActive: false,
+      isExpanded: false,
+      calls: ['Read', 'Read', 'Read', 'Grep', 'Glob'].map(tool => ({
+        tool,
+        input: {},
+        isRunning: false,
+        isErrored: false,
+        isInterrupted: false,
+      })),
+    },
+  },
+  {
+    id: 'edit',
+    component: 'ToolUse',
+    props: {
+      tool_use_id: 't3',
+      tool: 'Edit',
+      input: { file_path: 'internal/retry/retry.go' },
+      isRunning: false,
+      isErrored: false,
+      isInterrupted: false,
+    },
+  },
+  {
+    id: 'diff',
+    component: 'ToolResult',
+    props: {
+      tool_use_id: 't3',
+      tool: 'Edit',
+      isErrored: false,
+      output: {
+        filePath: 'internal/retry/retry.go',
+        structuredPatch: [
+          {
+            oldStart: 14,
+            oldLines: 4,
+            newStart: 14,
+            newLines: 5,
+            lines: [
+              '\t\tsleep := time.Duration(rand.Int63n(int64(d)))',
+              '-\t\tselect {',
+              '+\t\t// Full jitter: anywhere from zero to the current cap.',
+              '+\t\tselect {',
+              '\t\tcase <-ctx.Done():',
+              '\t\t\treturn ctx.Err()',
+            ].map(line => (line.startsWith('-') || line.startsWith('+') ? line : ` ${line}`)),
+          },
+        ],
+      },
+    },
+  },
+  {
+    id: 'mode',
+    component: 'SessionMode',
+    props: { modes: ['auto-accept edits'] },
   },
   {
     id: 'spinner',

@@ -1,7 +1,32 @@
-// claude-dracula palette: the Dracula color scheme (https://draculatheme.com, MIT).
-export const colors = {
+// claude-dracula palettes: the Dracula color scheme and its light sibling Alucard
+// (https://draculatheme.com, MIT).
+export type Palette = {
+  name: 'dracula' | 'alucard'
+  background: string
+  /** A step darker than the background (lighter on Alucard): the reply card. */
+  raised: string
+  currentLine: string
+  /** Row tints behind a diff's added and removed lines. */
+  added: string
+  removed: string
+  foreground: string
+  comment: string
+  cyan: string
+  green: string
+  orange: string
+  pink: string
+  purple: string
+  red: string
+  yellow: string
+}
+
+export const dracula: Palette = {
+  name: 'dracula',
   background: '#282A36',
+  raised: '#21222C',
   currentLine: '#44475A',
+  added: '#2B3D33',
+  removed: '#43293A',
   foreground: '#F8F8F2',
   comment: '#6272A4',
   cyan: '#8BE9FD',
@@ -11,7 +36,35 @@ export const colors = {
   purple: '#BD93F9',
   red: '#FF5555',
   yellow: '#F1FA8C',
-} as const
+}
+
+export const alucard: Palette = {
+  name: 'alucard',
+  background: '#FFFBEB',
+  raised: '#F5F0DA',
+  currentLine: '#CFCFDE',
+  added: '#DDEFD6',
+  removed: '#F6DCD8',
+  foreground: '#1F1F1F',
+  comment: '#635D97',
+  cyan: '#036A96',
+  green: '#14710A',
+  orange: '#A34D14',
+  pink: '#A3144D',
+  purple: '#644AC9',
+  red: '#CB3A2A',
+  yellow: '#846E15',
+}
+
+/** The dark palette, for code that draws the same in either theme. */
+export const colors = dracula
+
+/** Each Dracula accent's Alucard counterpart, so a preset follows the theme. */
+export function themed(accent: string, palette: Palette): string {
+  if (palette.name === 'dracula') return accent
+  const preset = (Object.keys(accents) as (keyof Palette)[]).find(key => dracula[key] === accent)
+  return preset ? palette[preset] : accent
+}
 
 export const accents: Record<string, string> = {
   purple: colors.purple,

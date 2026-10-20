@@ -1,15 +1,17 @@
-// Draws Claude's markdown in Dracula colors. The engine's own `Markdown` element takes
+// Draws Claude's markdown in Dracula c. The engine's own `Markdown` element takes
 // no colors, so the reply card parses the common markdown itself and draws it in Text
 // runs: headings purple, bold orange, italic yellow, code green, links cyan, list
 // markers cyan, quotes yellow, and fenced code through a small Dracula highlighter.
 import type { BoxProps, ElementConstructor, LinkProps, TextProps } from 'claude-code'
 
-import { colors } from './tokens'
+import type { Palette } from './tokens'
 
 export type Kit = {
   Box: ElementConstructor<BoxProps>
   Text: ElementConstructor<TextProps>
   Link: ElementConstructor<LinkProps>
+  /** The palette the markdown is drawn in. */
+  c: Palette
 }
 
 type Node = JSX.Element | string
@@ -19,7 +21,7 @@ const INLINE =
 
 /** Inline markdown as Text runs: code, bold, italic, strikethrough, links. */
 function inline(src: string, kit: Kit): Node[] {
-  const { Text, Link } = kit
+  const { Text, Link, c } = kit
   const out: Node[] = []
   let last = 0
   for (const m of src.matchAll(INLINE)) {
@@ -28,29 +30,29 @@ function inline(src: string, kit: Kit): Node[] {
     last = at + m[0].length
     const [, code, bold1, bold2, strike, italic1, italic2, label, href, bare] = m
     if (code !== undefined) {
-      out.push(<Text color={colors.green}>{code}</Text>)
+      out.push(<Text color={c.green}>{code}</Text>)
     } else if (bold1 !== undefined || bold2 !== undefined) {
       out.push(
-        <Text color={colors.orange} bold>
+        <Text color={c.orange} bold>
           {inline(bold1 ?? bold2 ?? '', kit)}
         </Text>,
       )
     } else if (strike !== undefined) {
       out.push(
-        <Text color={colors.comment} strikethrough>
+        <Text color={c.comment} strikethrough>
           {inline(strike, kit)}
         </Text>,
       )
     } else if (italic1 !== undefined || italic2 !== undefined) {
       out.push(
-        <Text color={colors.yellow} italic>
+        <Text color={c.yellow} italic>
           {inline(italic1 ?? italic2 ?? '', kit)}
         </Text>,
       )
     } else if (label !== undefined && href !== undefined) {
       out.push(
         <Link href={href}>
-          <Text color={colors.cyan} underline>
+          <Text color={c.cyan} underline>
             {inline(label, kit)}
           </Text>
         </Link>,
@@ -58,7 +60,7 @@ function inline(src: string, kit: Kit): Node[] {
     } else if (bare !== undefined) {
       out.push(
         <Link href={bare}>
-          <Text color={colors.cyan} underline>
+          <Text color={c.cyan} underline>
             {bare}
           </Text>
         </Link>,
@@ -96,10 +98,15 @@ const HASH_COMMENTS = new Set(
 )
 const DASH_COMMENTS = new Set('sql lua haskell hs elm'.split(' '))
 
-type Run = { text: string; color?: string; italic?: boolean }
+/** Tabs as four spaces, as the engine draws code. */
+export function untab(text: string): string {
+  return text.replace(/\t/g, '    ')
+}
+
+export type Run = { text: string; color?: string; italic?: boolean }
 
 /** One line of code as Dracula-colored runs; `state.block` carries an open block comment. */
-function highlight(line: string, lang: string, state: { block: boolean }): Run[] {
+export function highlight(line: string, lang: string, state: { block: boolean }, c: Palette): Run[] {
   const runs: Run[] = []
   const push = (text: string, color?: string, italic?: boolean) => {
     const prev = runs[runs.length - 1]
@@ -109,25 +116,25 @@ function highlight(line: string, lang: string, state: { block: boolean }): Run[]
   let rest = line
   if (state.block) {
     const end = rest.indexOf('*/')
-    if (end < 0) return [{ text: rest, color: colors.comment, italic: true }]
-    push(rest.slice(0, end + 2), colors.comment, true)
+    if (end < 0) return [{ text: rest, color: c.comment, italic: true }]
+    push(rest.slice(0, end + 2), c.comment, true)
     rest = rest.slice(end + 2)
     state.block = false
   }
   const lineComment = HASH_COMMENTS.has(lang) ? '#' : DASH_COMMENTS.has(lang) ? '--' : '//'
   while (rest.length > 0) {
     if (rest.startsWith(lineComment) || (lang === '' && rest.startsWith('#') && runs.every(r => !r.text.trim()))) {
-      push(rest, colors.comment, true)
+      push(rest, c.comment, true)
       break
     }
     if (rest.startsWith('/*')) {
       const end = rest.indexOf('*/', 2)
       if (end < 0) {
-        push(rest, colors.comment, true)
+        push(rest, c.comment, true)
         state.block = true
         break
       }
-      push(rest.slice(0, end + 2), colors.comment, true)
+      push(rest.slice(0, end + 2), c.comment, true)
       rest = rest.slice(end + 2)
       continue
     }
@@ -139,43 +146,43 @@ function highlight(line: string, lang: string, state: { block: boolean }): Run[]
     const token = m?.[1] ?? rest[0] ?? ''
     rest = rest.slice(token.length)
     const first = token[0] ?? ''
-    if (first === '"' || first === "'" || first === '`') push(token, colors.yellow)
-    else if (/^\d/.test(token)) push(token, colors.purple)
+    if (first === '"' || first === "'" || first === '`') push(token, c.yellow)
+    else if (/^\d/.test(token)) push(token, c.purple)
     else if (/^[A-Za-z_$@]/.test(token)) {
-      if (CONSTANTS.has(token)) push(token, colors.purple)
-      else if (KEYWORDS.has(token)) push(token, colors.pink)
-      else if (/^\s*\(/.test(rest)) push(token, colors.green)
-      else if (/^[A-Z]/.test(token) && /[a-z]/.test(token)) push(token, colors.cyan, true)
+      if (CONSTANTS.has(token)) push(token, c.purple)
+      else if (KEYWORDS.has(token)) push(token, c.pink)
+      else if (/^\s*\(/.test(rest)) push(token, c.green)
+      else if (/^[A-Z]/.test(token) && /[a-z]/.test(token)) push(token, c.cyan, true)
       else push(token)
-    } else if (/^[=+\-*/%<>!&|^~?:]+$/.test(token)) push(token, colors.pink)
+    } else if (/^[=+\-*/%<>!&|^~?:]+$/.test(token)) push(token, c.pink)
     else push(token)
   }
   return runs
 }
 
-function codeBlock(source: string, lang: string, kit: Kit, mono: boolean): JSX.Element {
-  const { Box, Text } = kit
-  const lines = source.replace(/\n$/, '').split('\n')
+export function codeBlock(source: string, lang: string, kit: Kit, mono: boolean): JSX.Element {
+  const { Box, Text, c } = kit
+  const lines = untab(source).replace(/\n$/, '').split('\n')
   const diff = lang === 'diff' || lang === 'patch'
   const state = { block: false }
   const drawn = lines.map(line => {
     if (diff) {
       const color = line.startsWith('+')
-        ? colors.green
+        ? c.green
         : line.startsWith('-')
-          ? colors.red
+          ? c.red
           : line.startsWith('@@')
-            ? colors.cyan
-            : colors.foreground
+            ? c.cyan
+            : c.foreground
       return (
         <Text mono={mono} color={color}>
           {line || ' '}
         </Text>
       )
     }
-    const runs = highlight(line, lang, state)
+    const runs = highlight(line, lang, state, c)
     return (
-      <Text mono={mono} color={colors.foreground}>
+      <Text mono={mono} color={c.foreground}>
         {runs.length === 0
           ? ' '
           : runs.map(run => (
@@ -187,10 +194,23 @@ function codeBlock(source: string, lang: string, kit: Kit, mono: boolean): JSX.E
     )
   })
   return (
-    <Box flexDirection="column" backgroundColor={colors.background} paddingX={1}>
+    <Box flexDirection="column" backgroundColor={c.background} paddingX={1}>
       {drawn}
     </Box>
   )
+}
+
+const EXTENSIONS: Record<string, string> = {
+  ts: 'ts', tsx: 'ts', js: 'js', jsx: 'js', mjs: 'js', go: 'go', rs: 'rust', py: 'py', rb: 'rb', sh: 'sh',
+  bash: 'sh', zsh: 'sh', yml: 'yaml', yaml: 'yaml', toml: 'toml', sql: 'sql', lua: 'lua', java: 'java',
+  kt: 'kotlin', swift: 'swift', c: 'c', h: 'c', cc: 'cpp', cpp: 'cpp', cs: 'cs', php: 'php', json: 'json',
+}
+
+/** The highlighter's language for a file path, by its extension; '' when unknown. */
+export function languageOf(path: string): string {
+  const name = path.split('/').pop() ?? ''
+  if (/^(Makefile|Dockerfile)$/i.test(name)) return name.toLowerCase()
+  return EXTENSIONS[name.split('.').pop()?.toLowerCase() ?? ''] ?? ''
 }
 
 const SEPARATOR = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/
@@ -201,13 +221,13 @@ function cells(row: string): string[] {
 }
 
 function table(rows: string[][], kit: Kit, mono: boolean): JSX.Element {
-  const { Box, Text } = kit
+  const { Box, Text, c } = kit
   const count = Math.max(...rows.map(row => row.length))
   const widths = Array.from({ length: count }, (_, i) =>
     Math.max(1, ...rows.map(row => visible(row[i] ?? '').length)),
   )
   const rule = (left: string, mid: string, right: string) => (
-    <Text mono={mono} color={colors.comment}>
+    <Text mono={mono} color={c.comment}>
       {left + widths.map(width => '─'.repeat(width + 2)).join(mid) + right}
     </Text>
   )
@@ -217,9 +237,9 @@ function table(rows: string[][], kit: Kit, mono: boolean): JSX.Element {
         const cell = row[i] ?? ''
         const pad = ' '.repeat(width - visible(cell).length + 1)
         return [
-          <Text color={colors.comment}>{i === 0 ? '│ ' : ' │ '}</Text>,
+          <Text color={c.comment}>{i === 0 ? '│ ' : ' │ '}</Text>,
           header ? (
-            <Text color={colors.purple} bold>
+            <Text color={c.purple} bold>
               {inline(cell, kit)}
             </Text>
           ) : (
@@ -228,7 +248,7 @@ function table(rows: string[][], kit: Kit, mono: boolean): JSX.Element {
           pad.slice(1),
         ]
       })}
-      <Text color={colors.comment}> │</Text>
+      <Text color={c.comment}> │</Text>
     </Text>
   )
   const [head = [], ...body] = rows
@@ -249,9 +269,9 @@ const RULE = /^\s{0,3}([-*_])(\s*\1){2,}\s*$/
 const QUOTE = /^\s{0,3}>\s?(.*)$/
 const ITEM = /^(\s*)([-*+]|\d+[.)])\s+(.*)$/
 
-/** Claude's markdown, drawn in Dracula colors. */
+/** Claude's markdown, drawn in Dracula c. */
 export function draculaMarkdown(text: string, kit: Kit, mono: boolean): JSX.Element {
-  const { Box, Text } = kit
+  const { Box, Text, c } = kit
   const lines = text.split('\n')
   const blocks: JSX.Element[] = []
   let i = 0
@@ -278,7 +298,7 @@ export function draculaMarkdown(text: string, kit: Kit, mono: boolean): JSX.Elem
     if (heading) {
       const level = heading[1]?.length ?? 1
       blocks.push(
-        <Text color={colors.purple} bold size={level === 1 ? 'title' : level === 2 ? 'heading' : 'body'}>
+        <Text color={c.purple} bold size={level === 1 ? 'title' : level === 2 ? 'heading' : 'body'}>
           {inline(heading[2] ?? '', kit)}
         </Text>,
       )
@@ -287,7 +307,7 @@ export function draculaMarkdown(text: string, kit: Kit, mono: boolean): JSX.Elem
     }
 
     if (RULE.test(line)) {
-      blocks.push(<Text color={colors.comment}>{'─'.repeat(40)}</Text>)
+      blocks.push(<Text color={c.comment}>{'─'.repeat(40)}</Text>)
       i++
       continue
     }
@@ -307,9 +327,9 @@ export function draculaMarkdown(text: string, kit: Kit, mono: boolean): JSX.Elem
       while (i < lines.length && QUOTE.test(lines[i] ?? '')) quoted.push(QUOTE.exec(lines[i++] ?? '')?.[1] ?? '')
       blocks.push(
         <Box flexDirection="row">
-          <Text color={colors.comment}>▌ </Text>
+          <Text color={c.comment}>▌ </Text>
           <Box flexGrow={1} flexShrink={1}>
-            <Text color={colors.yellow} italic>
+            <Text color={c.yellow} italic>
               {inline(quoted.join('\n'), kit)}
             </Text>
           </Box>
@@ -343,11 +363,11 @@ export function draculaMarkdown(text: string, kit: Kit, mono: boolean): JSX.Elem
             const task = /^\[([ xX])\]\s+/.exec(item.text)
             return (
               <Box flexDirection="row" paddingLeft={item.depth * 2}>
-                <Text color={colors.cyan}>{`${item.marker} `}</Text>
+                <Text color={c.cyan}>{`${item.marker} `}</Text>
                 <Box flexGrow={1} flexShrink={1}>
                   <Text>
                     {task && (
-                      <Text color={task[1] === ' ' ? colors.comment : colors.green}>
+                      <Text color={task[1] === ' ' ? c.comment : c.green}>
                         {task[1] === ' ' ? '☐ ' : '☑ '}
                       </Text>
                     )}
