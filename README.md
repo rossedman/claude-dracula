@@ -38,10 +38,12 @@ In the desktop app: click + next to the prompt box, then Plugins, Add marketplac
 | Site | Drawing | Surfaces |
 | --- | --- | --- |
 | Your prompt | Current-line bubble with a rounded accent border, right-aligned | terminal, desktop, vscode |
-| Claude's reply | Spark avatar + rounded comment-colored card around the reply | terminal, desktop, vscode |
+| Claude's reply | Bat avatar (spark with spooky off) + rounded comment-colored card around the reply | terminal, desktop, vscode |
 | Tool calls | Status dot (orange running, green done, red error, gray stopped), tool in cyan, first argument in comment gray | terminal, desktop, vscode |
-| Working line | Segmented progress line in the accent, label in pink | terminal, desktop, vscode |
-| Turn footer | Accent diamond + duration | terminal |
+| Tool results | The usual result, hung from a gutter mark (red on errors) | terminal, desktop, vscode |
+| Working line | Segmented progress line in the accent; pink label like "Lurking…" or "Haunting…" | terminal, desktop, vscode |
+| Turn footer | Accent diamond + "Fed for 14s" | terminal |
+| End of turn | Optional organ sting (`/pixelstack sound on`) | macOS |
 | Above the prompt | Palette dots + "pixelstack · dracula" | terminal, desktop |
 
 Expanded views (ctrl+o) always show the full default rows. The Claude mobile app runs the mod's commands but does not currently show its restyled rows. Pixelstack colors its own elements; for the full look, pair it with a Dracula theme for your terminal.
@@ -50,9 +52,11 @@ Expanded views (ctrl+o) always show the full default rows. The Claude mobile app
 
 - `/pixelstack on` / `/pixelstack off`
 - `/pixelstack accent <purple|pink|cyan|green|orange|#hex>`
+- `/pixelstack spooky on` / `off`: the bat avatar and vampire words (on by default)
+- `/pixelstack sound on` / `off`: an organ sting when a turn finishes (off by default; plays a preview when turned on; macOS only)
 - `/pixelstack status`
 
-Settings persist across sessions.
+Settings persist across sessions. The bat icon and the organ sting (`sounds/organ.wav`, synthesized for this project) are original.
 
 ## Palette
 

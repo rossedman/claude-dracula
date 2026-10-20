@@ -77,7 +77,8 @@ test('the spinner fills its blocks by mode', async ($, on) => {
   })
   const lines = await ui.findAll({ type: 'Text', text: /^━+$/ })
   expect(lines.map(line => line.text).slice(-2)).toEqual(['━━━━━━', '━━'])
-  expect((await ui.find({ type: 'Text', text: /Working/ }))?.text).toBe('Working')
+  const label = await ui.find({ type: 'Text', text: /…$/ })
+  expect(label?.text).not.toContain('Working')
   await ui.unmount()
 })
 
@@ -107,7 +108,7 @@ test('saved settings come back at the next session', async ($, on) => {
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
 
   const status = await $.command.run(run('status'))
-  expect(status.text).toBe('Pixelstack is off, accent #8BE9FD.')
+  expect(status.text).toBe('Pixelstack is off, accent #8BE9FD, spooky on, sound off.')
 })
 
 test('an accent saved by the old palette moves to Dracula purple', async ($, on) => {
@@ -115,5 +116,71 @@ test('an accent saved by the old palette moves to Dracula purple', async ($, on)
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
 
   const status = await $.command.run(run('status'))
-  expect(status.text).toBe('Pixelstack is on, accent #BD93F9.')
+  expect(status.text).toBe('Pixelstack is on, accent #BD93F9, spooky on, sound off.')
+})
+
+test('spooky mode swaps the avatar and words, and turns off', async ($, on) => {
+  engine(on)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+
+  const replyUi = await $.ui.mount(reply('desktop'))
+  expect((await replyUi.find({ type: 'Svg' }))?.props.source).toContain('circle')
+  await replyUi.unmount()
+
+  const turn = {
+    plugin: 'pixelstack',
+    component: 'TurnDuration',
+    surface: 'terminal',
+    props: { word: 'Baked', durationMs: 14000 },
+  } as const
+  const spookyTurn = await $.ui.mount(turn)
+  expect((await spookyTurn.find({ type: 'Text', text: / for 14s$/ }))?.text).toMatch(/^◆ \w+ for 14s$/)
+  await spookyTurn.unmount()
+
+  await $.command.run(run('spooky off'))
+
+  const plainReply = await $.ui.mount(reply('desktop'))
+  expect((await plainReply.find({ type: 'Svg' }))?.props.source).not.toContain('circle')
+  await plainReply.unmount()
+
+  const plainTurn = await $.ui.mount(turn)
+  expect((await plainTurn.find({ type: 'Text', text: /14s/ }))?.text).toBe('◆ 14s')
+  await plainTurn.unmount()
+})
+
+test('a tool result keeps the engine drawing beside its gutter mark', async ($, on) => {
+  engine(on)
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+
+  const ui = await $.ui.mount({
+    plugin: 'pixelstack',
+    component: 'ToolResult',
+    surface: 'terminal',
+    props: { tool_use_id: 't1', tool: 'Bash', output: { stdout: 'ok' }, isErrored: false },
+  })
+  expect(await ui.find({ type: 'Text', text: /^╰$/ })).toBeTruthy()
+  expect(await ui.find({ type: 'Text', text: /engine/ })).toBeTruthy()
+  await ui.unmount()
+})
+
+test('the organ plays at the end of an answered turn only when sound is on', async ($, on) => {
+  engine(on)
+  const played: string[] = []
+  on('audio.play', (_, e) => {
+    played.push(JSON.stringify(e))
+    return { value: undefined }
+  })
+  on('turn.complete', () => ({ text: '' }))
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+
+  const turn = { reason: 'answer', answer: 'hi', durationMs: 10, isAborted: false, turnId: 't' } as const
+  await $.turn.complete(turn)
+  expect(played.length).toBe(0)
+
+  await $.command.run(run('sound on'))
+  const preview = played.length
+  await $.turn.complete(turn)
+  await $.turn.complete({ ...turn, agentId: 'sub' })
+  expect(played.length - preview).toBe(1)
+  expect(played.at(-1)).toContain('sounds/organ.wav')
 })

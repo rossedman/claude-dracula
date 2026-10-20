@@ -93,7 +93,7 @@ BASE_CSS = """
 body{margin:0;background:#141413;color:#E8E6DF;-webkit-font-smoothing:antialiased}
 .md p{margin:.4em 0}
 .md pre{background:rgba(0,0,0,.22);border:1px solid rgba(98,114,164,.35);border-radius:6px;padding:10px 12px;overflow:hidden;margin:.6em 0;font-size:13px;line-height:1.45}
-.md code{font-family:'DejaVu Sans Mono',ui-monospace,monospace}
+.md code{font-family:'DejaVu Sans Mono','Noto Color Emoji',ui-monospace,monospace}
 .row{margin:10px 0}
 """
 
@@ -101,11 +101,12 @@ body{margin:0;background:#141413;color:#E8E6DF;-webkit-font-smoothing:antialiase
 def desktop_page(trees, accent):
     g = lambda i: render(trees[(accent, "desktop", i)], 8)
     body = f"""
-<div style="width:880px;padding:28px 36px 24px;font-family:'DejaVu Sans',system-ui,sans-serif;font-size:15px;line-height:1.55;background:#1F1E1C">
+<div style="width:880px;padding:28px 36px 24px;font-family:'DejaVu Sans','Noto Color Emoji',system-ui,sans-serif;font-size:15px;line-height:1.55;background:#1F1E1C">
   <div class="row">{g('user')}</div>
   <div class="row">{g('tool1')}</div>
   <div class="row">{g('reply')}</div>
   <div class="row">{g('tool2')}</div>
+  <div style="margin:-4px 0 10px 4px">{g('result')}</div>
   <div class="row" style="margin-top:14px">{g('spinner')}</div>
   <div style="margin-top:22px">{g('band')}</div>
   <div style="margin-top:8px;border:1px solid #3a3833;border-radius:14px;padding:14px 16px;color:#8d8a82;background:#2A2926">Reply to Claude…</div>
@@ -116,11 +117,12 @@ def desktop_page(trees, accent):
 def terminal_page(trees, accent):
     g = lambda i: render(trees[(accent, "terminal", i)], 9)
     body = f"""
-<div style="width:880px;padding:22px 26px;font-family:'DejaVu Sans Mono',ui-monospace,monospace;font-size:14px;line-height:1.5;background:#282A36;color:#F8F8F2">
+<div style="width:880px;padding:22px 26px;font-family:'DejaVu Sans Mono','Noto Color Emoji',ui-monospace,monospace;font-size:14px;line-height:1.5;background:#282A36;color:#F8F8F2">
   <div class="row">{g('user')}</div>
   <div class="row">{g('tool1')}</div>
   <div class="row">{g('reply')}</div>
   <div class="row">{g('tool2')}</div>
+  <div style="margin:-4px 0 10px 4px">{g('result')}</div>
   <div class="row">{g('turn')}</div>
   <div class="row" style="margin-top:14px">{g('spinner')}</div>
   <div style="margin-top:16px">{g('band')}</div>

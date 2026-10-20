@@ -2,14 +2,28 @@ import { atom, read, update } from 'claude-code'
 import type { Register } from 'claude-code'
 
 import type { PixelstackSettings } from '../types'
-import { sparkTile } from './icons'
-import { SEGMENTS, accents, colors, defaultAccent, modeSegments, parseAccent } from './tokens'
+import { batTile, sparkTile } from './icons'
+import {
+  SEGMENTS,
+  accents,
+  colors,
+  defaultAccent,
+  modeSegments,
+  parseAccent,
+  pick,
+  spookyPastWords,
+  spookyWords,
+} from './tokens'
 
 const STORE_KEY = 'settings'
 const settings = atom({ plugin: 'pixelstack', key: 'settings' } as const, {
   enabled: true,
   accent: defaultAccent,
+  spooky: true,
+  sound: false,
 } as PixelstackSettings)
+
+const ORGAN = { asset: 'sounds/organ.wav' } as const
 
 // Accents saved by the earlier blocky palette; they move to the Dracula default.
 const RETIRED_ACCENTS = new Set(['#79B33D', '#E8B83A', '#6FB7E8', '#D9553B'])
@@ -33,6 +47,8 @@ function summarize(input: unknown): string {
 const HELP = [
   '`/pixelstack on` / `off` turns the theme on or off.',
   `\`/pixelstack accent <${Object.keys(accents).join('|')}|#hex>\` swaps the accent.`,
+  '`/pixelstack spooky on` / `off` turns the bat avatar and vampire words on or off.',
+  '`/pixelstack sound on` / `off` plays an organ sting when a turn finishes (macOS).',
   '`/pixelstack status` shows the current settings.',
 ].join('\n')
 
@@ -46,11 +62,13 @@ export const register: Register = on => {
           typeof saved.accent === 'string' && !RETIRED_ACCENTS.has(saved.accent)
             ? saved.accent
             : current.accent,
+        spooky: typeof saved.spooky === 'boolean' ? saved.spooky : current.spooky,
+        sound: typeof saved.sound === 'boolean' ? saved.sound : current.sound,
       }))
     }
     await $.command.register({
       name: 'pixelstack',
-      description: 'Pixelstack theme: on, off, accent <name|#hex>, status',
+      description: 'Pixelstack theme: on, off, accent <name|#hex>, spooky on|off, sound on|off, status',
     })
 
     return next(e)
@@ -67,6 +85,8 @@ export const register: Register = on => {
       const accent = parseAccent(rest.join(' '))
       if (!accent) return { text: `Unknown accent. ${HELP}` }
       changed = { ...current, accent, enabled: true }
+    } else if ((verb === 'spooky' || verb === 'sound') && (rest[0] === 'on' || rest[0] === 'off')) {
+      changed = { ...current, [verb]: rest[0] === 'on' }
     } else if (verb !== 'status') {
       return { text: HELP }
     }
@@ -76,10 +96,27 @@ export const register: Register = on => {
       await update($, settings, () => next)
       await $.store.set(STORE_KEY, next)
       $.ui.toast(next.enabled ? `Pixelstack on · accent ${next.accent}` : 'Pixelstack off')
+      if (verb === 'sound' && next.sound) {
+        void $.audio.play(ORGAN).catch(() => undefined)
+      }
     }
 
     const now = changed ?? current
-    return { text: `Pixelstack is ${now.enabled ? 'on' : 'off'}, accent ${now.accent}.` }
+    const onOff = (value: boolean) => (value ? 'on' : 'off')
+    return {
+      text: `Pixelstack is ${onOff(now.enabled)}, accent ${now.accent}, spooky ${onOff(now.spooky)}, sound ${onOff(now.sound)}.`,
+    }
+  })
+
+  // The organ sting when the main conversation's turn ends with an answer.
+  on('turn.complete', async ($, e, next) => {
+    const result = await next(e)
+    const { enabled, sound } = await read($, settings)
+    if (enabled && sound && e.reason === 'answer' && !e.agentId) {
+      void $.audio.play(ORGAN, { gain: 0.6 }).catch(() => undefined)
+    }
+
+    return result
   })
 
   // The person's own prompt: a current-line bubble with a rounded accent border.
@@ -99,25 +136,26 @@ export const register: Register = on => {
     )
   })
 
-  // Claude's reply: a spark avatar on the first block, the reply in a rounded comment-colored card.
+  // Claude's reply: a spark (or bat) avatar on the first block, the reply in a rounded card.
   on('ui.render', { component: 'AssistantMessage' }, async ($, e, next) => {
-    const { enabled, accent } = await read($, settings)
+    const { enabled, accent, spooky } = await read($, settings)
     if (!enabled || e.props.isSummary) return next(e)
     const { Box, Markdown, Text } = $.ui.resolve(e)
     const isTerminal = e.surface === 'terminal'
 
     let avatar: JSX.Element
     if (!e.props.isFirstOfReply) {
-      avatar = <Box width={isTerminal ? 1 : 24} />
+      avatar = <Box width={isTerminal ? (spooky ? 2 : 1) : 24} />
     } else if (e.surface === 'terminal') {
       avatar = (
         <Text color={accent} bold>
-          ✦
+          {spooky ? '🦇' : '✦'}
         </Text>
       )
     } else {
       const { Svg } = $.ui.resolve(e)
-      avatar = <Svg source={sparkTile(accent)} alt="Claude" width={24} height={24} />
+      const source = spooky ? batTile(accent) : sparkTile(accent)
+      avatar = <Svg source={source} alt="Claude" width={24} height={24} />
     }
 
     return (
@@ -132,11 +170,12 @@ export const register: Register = on => {
 
   // The working line: a segmented progress line that fills as the turn moves along.
   on('ui.render', { component: 'Spinner' }, async ($, e, next) => {
-    const { enabled, accent } = await read($, settings)
+    const { enabled, accent, spooky } = await read($, settings)
     if (!enabled) return next(e)
     const { Box, Text } = $.ui.resolve(e)
     const filled = modeSegments[e.props.mode] ?? 1
-    const label = e.props.message ?? e.props.word
+    const word = spooky ? pick(spookyWords, e.props.word) : e.props.word
+    const label = e.props.message ?? `${word}${e.props.suffix}`
 
     return (
       <Box flexDirection="row" gap={1}>
@@ -179,9 +218,26 @@ export const register: Register = on => {
     )
   })
 
-  // The line closing a turn (terminal): a diamond and the duration.
+  // A tool's result: the engine's own drawing, hung from a gutter mark in the status color.
+  on('ui.render', { component: 'ToolResult' }, async ($, e, next) => {
+    const { enabled } = await read($, settings)
+    if (!enabled) return next(e)
+    const drawn = await next(e)
+    const { Box, Text } = $.ui.resolve(e)
+
+    return (
+      <Box flexDirection="row" gap={1}>
+        <Text color={e.props.isErrored ? colors.red : colors.comment}>╰</Text>
+        <Box flexGrow={1} flexDirection="column">
+          {drawn}
+        </Box>
+      </Box>
+    )
+  })
+
+  // The line closing a turn (terminal): a diamond, a word and the duration.
   on('ui.render', { component: 'TurnDuration' }, async ($, e, next) => {
-    const { enabled, accent } = await read($, settings)
+    const { enabled, accent, spooky } = await read($, settings)
     if (!enabled || e.props.isExpanded || e.props.waitingFor) return next(e)
     const { Text } = $.ui.resolve(e)
     const seconds = Math.max(1, Math.round(e.props.durationMs / 1000))
@@ -189,7 +245,7 @@ export const register: Register = on => {
 
     return (
       <Text color={colors.comment}>
-        <Text color={accent}>◆</Text> {shown}
+        <Text color={accent}>◆</Text> {spooky ? `${pick(spookyPastWords, e.props.word)} for ${shown}` : shown}
       </Text>
     )
   })

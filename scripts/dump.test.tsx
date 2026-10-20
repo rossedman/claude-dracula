@@ -30,7 +30,7 @@ const SITES = [
       tool_use_id: 't2',
       tool: 'Bash',
       input: { command: 'go test ./internal/retry/...' },
-      isRunning: true,
+      isRunning: false,
       isErrored: false,
       isInterrupted: false,
     },
@@ -44,6 +44,11 @@ const SITES = [
         "Here's a compact version. It doubles the delay each attempt, caps it, and adds **full jitter** so retries from many clients don't line up.\n\n" +
         '```go\nfunc Retry(ctx context.Context, n int, fn func() error) error {\n\td := 100 * time.Millisecond\n\tfor i := 0; i < n; i++ {\n\t\tif err := fn(); err == nil {\n\t\t\treturn nil\n\t\t}\n\t\tsleep := time.Duration(rand.Int63n(int64(d)))\n\t\tselect {\n\t\tcase <-ctx.Done():\n\t\t\treturn ctx.Err()\n\t\tcase <-time.After(sleep):\n\t\t}\n\t\td = min(d*2, 10*time.Second)\n\t}\n\treturn errors.New("retries exhausted")\n}\n```',
     },
+  },
+  {
+    id: 'result',
+    component: 'ToolResult',
+    props: { tool_use_id: 't2', tool: 'Bash', output: { stdout: 'ok' }, isErrored: false },
   },
   {
     id: 'spinner',
@@ -68,6 +73,11 @@ for (const accent of ['purple', 'pink', 'cyan', 'green']) {
     on('command.register', () => ({ value: { command: 'pixelstack' } }))
     on('ui.toast', () => ({ value: undefined }))
     on('session.start', (_, e) => ({ cwd: e.cwd }))
+    // Stands in for the engine's own result drawing, which the mod wraps.
+    on('ui.render', { component: 'ToolResult' }, ($, e) => {
+      const { Text } = $.ui.resolve(e)
+      return <Text color="#F8F8F2">ok    example.com/retry/internal/retry    0.412s</Text>
+    })
     await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
     await $.command.run({
       command: 'pixelstack',

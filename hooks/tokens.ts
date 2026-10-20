@@ -41,3 +41,27 @@ export const modeSegments: Record<string, number> = {
 }
 
 export const SEGMENTS = 8
+
+/** Working words while a turn runs, spooky mode. */
+export const spookyWords = [
+  'Lurking',
+  'Brooding',
+  'Haunting',
+  'Conjuring',
+  'Skulking',
+  'Creeping',
+  'Summoning',
+  'Prowling',
+  'Scheming',
+  'Bewitching',
+]
+
+/** Past-tense words for the line closing a turn, spooky mode. */
+export const spookyPastWords = ['Fed', 'Lurked', 'Haunted', 'Brooded', 'Conjured', 'Prowled', 'Feasted']
+
+/** Picks a word from `list`, stable for the same `seed`. */
+export function pick(list: readonly string[], seed: string): string {
+  let hash = 0
+  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0
+  return list[Math.abs(hash) % list.length] ?? list[0] ?? ''
+}
