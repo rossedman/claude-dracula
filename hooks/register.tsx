@@ -20,7 +20,7 @@ import {
   themed,
 } from './tokens'
 import type { Palette } from './tokens'
-import { changeCounts, drawGroup, drawResult, toolColor } from './tools'
+import { changeCounts, drawGroup, drawResult, toolColor, toolName } from './tools'
 
 const STORE_KEY = 'settings'
 const settings = atom({ plugin: 'dracula', key: 'settings' } as const, {
@@ -87,6 +87,11 @@ function draw(dracula: () => JSX.Element, plain: () => JSX.Element): JSX.Element
   } catch {
     return plain()
   }
+}
+
+/** Text cut to a width with an ellipsis, or padded out to it. */
+function fit(text: string, width: number): string {
+  return text.length > width ? `${text.slice(0, width - 1)}…` : text.padEnd(width)
 }
 
 /** The checkout's branch, or null outside a git repository. */
@@ -442,7 +447,7 @@ export const register: Register = on => {
           </Text>
         ) : (
           <Text color={toolColor(e.props.tool, c)} bold>
-            {e.props.tool}
+            {toolName(e.props.tool)}
           </Text>
         )}
         {arg.length > 0 && (
@@ -628,7 +633,7 @@ export const register: Register = on => {
     const width = Math.max(20, e.props.bodyColumns)
     const tools = Object.entries(stats.tools).sort((a, b) => b[1] - a[1])
     const files = [...stats.files].sort((a, b) => b.added + b.removed - (a.added + a.removed))
-    const nameWidth = Math.min(14, Math.max(4, ...tools.map(([tool]) => tool.length)))
+    const nameWidth = Math.min(14, Math.max(4, ...tools.map(([tool]) => toolName(tool).length)))
     const toolMax = Math.max(1, ...tools.map(([, n]) => n))
     const barRoom = Math.max(4, width - nameWidth - 8)
     const fileMax = Math.max(1, ...files.map(file => file.added + file.removed))
@@ -653,7 +658,7 @@ export const register: Register = on => {
             </Text>
             {tools.map(([tool, n]) => (
               <Text>
-                <Text color={toolColor(tool, c)}>{tool.slice(0, nameWidth).padEnd(nameWidth)}</Text>{' '}
+                <Text color={toolColor(tool, c)}>{fit(toolName(tool), nameWidth)}</Text>{' '}
                 <Text color={toolColor(tool, c)}>{'█'.repeat(Math.max(1, Math.round((n / toolMax) * barRoom)))}</Text>
                 <Text color={c.comment}> {n}</Text>
               </Text>

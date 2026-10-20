@@ -221,6 +221,33 @@ test('a folded run of calls is one row of tool chips', async ($, on) => {
   await ui.unmount()
 })
 
+test('MCP tool chips read server · tool, stay on one line and wrap between chips', async ($, on) => {
+  engine(on)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+
+  const call = (tool: string) => ({ tool, input: {}, isRunning: false, isErrored: false, isInterrupted: false })
+  const ui = await $.ui.mount({
+    plugin: 'dracula',
+    component: 'ToolGroup',
+    surface: 'desktop',
+    props: {
+      calls: [
+        call('mcp__plugin_buildkite-tools_buildkite__list_builds'),
+        call('mcp__terminal__run_in_terminal'),
+        call('mcp__1a59c906-04da-521d-bda7-7f71b9f9e01c__batch'),
+      ],
+      isActive: false,
+      isExpanded: false,
+    },
+  })
+  expect(await ui.find({ type: 'Text', text: /^ buildkite · list_builds $/ })).toBeTruthy()
+  expect(await ui.find({ type: 'Text', text: /^ terminal · run_in_terminal $/ })).toBeTruthy()
+  const chip = (await ui.find({ type: 'Text', text: /^ batch $/ })) as { props?: { wrap?: string } } | undefined
+  expect(chip?.props?.wrap).toBe('truncate-end')
+  expect(await ui.find({ type: 'Box', props: { flexWrap: 'wrap' } })).toBeTruthy()
+  await ui.unmount()
+})
+
 test('/dracula light draws in Alucard, /dracula dark brings Dracula back', async ($, on) => {
   engine(on)
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
