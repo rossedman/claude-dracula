@@ -65,7 +65,15 @@ const SITES = [
     props: {
       isActive: false,
       isExpanded: false,
-      calls: ['Read', 'Read', 'Read', 'Grep', 'Glob'].map(tool => ({
+      calls: [
+        'Read',
+        'Read',
+        'Read',
+        'Grep',
+        'Glob',
+        'mcp__plugin_buildkite-tools_buildkite__list_builds',
+        'mcp__terminal__run_in_terminal',
+      ].map(tool => ({
         tool,
         input: {},
         isRunning: false,

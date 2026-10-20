@@ -45,7 +45,7 @@ def render(node, unit):
     inner = "".join(render(k, unit) for k in kids)
     if t == "Box":
         s = ["display:flex", f"flex-direction:{p.get('flexDirection', 'row')}"]
-        for key, css in [("justifyContent", "justify-content"), ("alignItems", "align-items")]:
+        for key, css in [("justifyContent", "justify-content"), ("alignItems", "align-items"), ("flexWrap", "flex-wrap")]:
             if key in p:
                 s.append(f"{css}:{p[key]}")
         if "flexGrow" in p:

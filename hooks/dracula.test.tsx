@@ -205,7 +205,7 @@ test('an edit is drawn as a Dracula diff', async ($, on) => {
   await ui.unmount()
 })
 
-test('a folded run of calls is one row of tool chips', async ($, on) => {
+test('a folded run of calls is one line of colored tool names', async ($, on) => {
   engine(on)
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
 
@@ -216,8 +216,38 @@ test('a folded run of calls is one row of tool chips', async ($, on) => {
     surface: 'terminal',
     props: { calls: [call('Read'), call('Read'), call('Grep')], isActive: false, isExpanded: false },
   })
-  expect(await ui.find({ type: 'Text', text: /^ Read ×2 $/ })).toBeTruthy()
-  expect(await ui.find({ type: 'Text', text: /^ Grep $/ })).toBeTruthy()
+  const color = async (text: RegExp) =>
+    ((await ui.find({ type: 'Text', text })) as { props?: { color?: string } } | undefined)?.props?.color
+  expect(await color(/^Read$/)).toBe('#8BE9FD')
+  expect(await color(/^ ×2$/)).toBe('#6272A4')
+  expect(await color(/^Grep$/)).toBe('#FF79C6')
+  const texts = (await ui.findAll({ type: 'Text' })) as { props?: { backgroundColor?: string } }[]
+  expect(texts.some(text => text.props?.backgroundColor)).toBe(false)
+  await ui.unmount()
+})
+
+test('MCP tools in a folded run read server/tool', async ($, on) => {
+  engine(on)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+
+  const call = (tool: string) => ({ tool, input: {}, isRunning: false, isErrored: false, isInterrupted: false })
+  const ui = await $.ui.mount({
+    plugin: 'dracula',
+    component: 'ToolGroup',
+    surface: 'desktop',
+    props: {
+      calls: [
+        call('mcp__plugin_buildkite-tools_buildkite__list_builds'),
+        call('mcp__terminal__run_in_terminal'),
+        call('mcp__1a59c906-04da-521d-bda7-7f71b9f9e01c__batch'),
+      ],
+      isActive: false,
+      isExpanded: false,
+    },
+  })
+  expect(await ui.find({ type: 'Text', text: /^buildkite\/list_builds$/ })).toBeTruthy()
+  expect(await ui.find({ type: 'Text', text: /^terminal\/run_in_terminal$/ })).toBeTruthy()
+  expect(await ui.find({ type: 'Text', text: /^batch$/ })).toBeTruthy()
   await ui.unmount()
 })
 
