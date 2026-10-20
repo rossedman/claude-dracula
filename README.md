@@ -2,6 +2,19 @@
 
 A Claude mod that redraws the conversation in a chunky pixel style with an earthy blocky-world palette: grass, dirt, wood, stone and sky.
 
+![Pixelstack in the desktop app](docs/desktop.png)
+
+<details>
+<summary>Terminal and accent colors</summary>
+
+![Pixelstack in the terminal](docs/terminal.png)
+
+![The four accent presets](docs/accents.png)
+
+</details>
+
+The Pixelstack elements in these images are drawn from the exact output of the mod's render hooks; the window, prompt box and fonts around them are a neutral stand-in for the app. See [Regenerate the screenshots](#regenerate-the-screenshots).
+
 ## Install
 
 At the prompt of a terminal session:
@@ -65,6 +78,16 @@ claude --plugin-dir .
 ```
 
 `.claude-plugin/types/` is written by Claude Code when it loads the mod and is git-ignored.
+
+### Regenerate the screenshots
+
+`scripts/dump.test.tsx` prints every tree the mod draws for a sample conversation, and `scripts/screenshots.py` renders them in headless Chromium:
+
+```sh
+claude plugin test . > test-output.txt
+pip install playwright markdown && python3 -m playwright install chromium
+python3 scripts/screenshots.py test-output.txt docs
+```
 
 ## License
 
