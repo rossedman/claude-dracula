@@ -1,4 +1,4 @@
-<p align="center"><a href="https://rossedman.github.io/claude-dracula/"><img src="docs/banner.png" alt="claude-dracula: your Claude conversation, after dark" width="100%"></a></p>
+<p align="center"><a href="https://rossedman.github.io/claude-dracula/"><img src="docs/banner.png" alt="claude-dracula: your Claude conversation, now with bats" width="100%"></a></p>
 
 # Pixelstack
 
