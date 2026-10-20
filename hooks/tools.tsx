@@ -18,7 +18,7 @@ export function toolColor(tool: string, c: Palette): string {
 
 /**
  * A tool's name as a person reads it: an MCP tool's `mcp__server__tool` becomes
- * `server · tool`, with a plugin's `plugin_<plugin>_` prefix dropped and an id-like
+ * `server/tool`, with a plugin's `plugin_<plugin>_` prefix dropped and an id-like
  * server name (a connector's UUID) left out; built-in names pass through.
  */
 export function toolName(tool: string): string {
@@ -26,7 +26,7 @@ export function toolName(tool: string): string {
   if (!m) return tool
   const server = (m[1] ?? '').replace(/^plugin_[^_]+_/, '')
   const name = m[2] ?? ''
-  return /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(server) || !server ? name : `${server} · ${name}`
+  return /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(server) || !server ? name : `${server}/${name}`
 }
 
 type Hunk = { oldStart: number; newStart: number; lines: string[] }
@@ -328,18 +328,17 @@ export function drawGroup(calls: readonly GroupCall[], isActive: boolean, kit: K
   const running = isActive && calls.some(call => call.isRunning)
 
   return (
-    // Chips keep to one line each; a row with more than fits wraps between them.
-    <Box flexDirection="row" flexWrap="wrap" alignItems="center" gap={1}>
+    // One line of colored tool names, split by dim dots: no fills to break or misalign.
+    <Box flexDirection="row" gap={1}>
       <Text color={running ? c.orange : errors > 0 ? c.red : c.green}>●</Text>
-      {[...tally].map(([tool, count]) => (
-        <Box flexShrink={0}>
-          <Text backgroundColor={c.currentLine} color={toolColor(tool, c)} wrap="truncate-end">
-            {` ${toolName(tool)}`}
-            <Text color={c.foreground}>{count > 1 ? ` ×${count} ` : ' '}</Text>
-          </Text>
-        </Box>
-      ))}
-      {errors > 0 && <Text color={c.red}>{errors === 1 ? '1 error' : `${errors} errors`}</Text>}
+      <Text>
+        {[...tally].flatMap(([tool, count], i) => [
+          i > 0 ? <Text color={c.comment}>{' · '}</Text> : null,
+          <Text color={toolColor(tool, c)}>{toolName(tool)}</Text>,
+          count > 1 ? <Text color={c.comment}>{` ×${count}`}</Text> : null,
+        ])}
+        {errors > 0 && <Text color={c.red}>{errors === 1 ? '  1 error' : `  ${errors} errors`}</Text>}
+      </Text>
     </Box>
   )
 }
