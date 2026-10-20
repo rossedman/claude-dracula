@@ -1,4 +1,4 @@
-// Pixelstack palette: the Dracula color scheme (https://draculatheme.com, MIT).
+// claude-dracula palette: the Dracula color scheme (https://draculatheme.com, MIT).
 export const colors = {
   background: '#282A36',
   currentLine: '#44475A',

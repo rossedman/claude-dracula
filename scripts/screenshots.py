@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Render README screenshots from the trees Pixelstack actually draws.
+"""Render README screenshots from the trees claude-dracula actually draws.
 
 Input: the output of `claude plugin test` run with scripts/dump.test.tsx,
-which prints one `PIXELSTACK_DUMP {json}` line per drawn site.
+which prints one `DRACULA_DUMP {json}` line per drawn site.
 Output: PNGs in docs/ (desktop and terminal previews, plus an accent strip).
 
-The Pixelstack parts are drawn exactly from the mod's trees. The window,
+The claude-dracula parts are drawn exactly from the mod's trees. The window,
 prompt box and fonts around them are a neutral stand-in for the app.
 
 Usage: python3 scripts/screenshots.py <test-output.txt> <out-dir>
@@ -18,7 +18,7 @@ from pathlib import Path
 import markdown
 from playwright.sync_api import sync_playwright
 
-DUMP = "PIXELSTACK_DUMP "
+DUMP = "DRACULA_DUMP "
 
 
 def load(path):
@@ -136,7 +136,7 @@ def accents_page(trees):
     for accent in ["purple", "pink", "cyan", "green"]:
         g = lambda i: render(trees[(accent, "desktop", i)], 8)
         cells += f"""<div style="flex:1;min-width:0;padding:14px 16px;background:#1F1E1C;border:1px solid #2f2d29">
-          <div style="font-size:12px;color:#8d8a82;margin-bottom:10px;font-family:'DejaVu Sans Mono',monospace">/pixelstack accent {accent}</div>
+          <div style="font-size:12px;color:#8d8a82;margin-bottom:10px;font-family:'DejaVu Sans Mono',monospace">/dracula accent {accent}</div>
           <div style="margin-bottom:10px">{g('spinner')}</div>{g('band')}</div>"""
     body = f'<div style="width:880px;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px;font-family:\'DejaVu Sans\',sans-serif;font-size:14px;background:#141413">{cells}</div>'
     return f"<!doctype html><html><head><meta charset=utf-8><style>{BASE_CSS}</style></head><body>{body}</body></html>"

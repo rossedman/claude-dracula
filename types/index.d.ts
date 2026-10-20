@@ -1,4 +1,4 @@
-export type PixelstackSettings = {
+export type DraculaSettings = {
   enabled: boolean
   accent: string
   /** Bat avatar and vampire working/closing words. */
@@ -9,6 +9,6 @@ export type PixelstackSettings = {
 
 declare module 'claude-code' {
   interface PluginState {
-    pixelstack: { settings: PixelstackSettings }
+    dracula: { settings: DraculaSettings }
   }
 }

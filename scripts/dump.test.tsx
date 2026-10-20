@@ -1,5 +1,5 @@
-// Dumps the trees Pixelstack draws for a sample conversation, as JSON lines
-// prefixed "PIXELSTACK_DUMP ", so scripts/screenshots.py can render README images.
+// Dumps the trees claude-dracula draws for a sample conversation, as JSON lines
+// prefixed "DRACULA_DUMP ", so scripts/screenshots.py can render README images.
 // Runs with the rest of the suite: claude plugin test . > test-output.txt
 import { mock, test } from 'claude-code/testing'
 
@@ -70,7 +70,7 @@ const SITES = [
 for (const accent of ['purple', 'pink', 'cyan', 'green']) {
   test(`dump (${accent})`, async ($, on) => {
     mock.store(on, {})
-    on('command.register', () => ({ value: { command: 'pixelstack' } }))
+    on('command.register', () => ({ value: { command: 'dracula' } }))
     on('ui.toast', () => ({ value: undefined }))
     on('session.start', (_, e) => ({ cwd: e.cwd }))
     // Stands in for the engine's own result drawing, which the mod wraps.
@@ -80,7 +80,7 @@ for (const accent of ['purple', 'pink', 'cyan', 'green']) {
     })
     await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
     await $.command.run({
-      command: 'pixelstack',
+      command: 'dracula',
       args: `accent ${accent}`,
       origin,
       presentation: { isFullscreen: false, columns: 80 },
@@ -89,9 +89,9 @@ for (const accent of ['purple', 'pink', 'cyan', 'green']) {
     for (const surface of ['desktop', 'terminal'] as const) {
       for (const site of SITES) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const ui = await $.ui.mount({ plugin: 'pixelstack', surface, component: site.component, props: site.props } as any)
+        const ui = await $.ui.mount({ plugin: 'dracula', surface, component: site.component, props: site.props } as any)
         const tree = await ui.drawn()
-        console.log('PIXELSTACK_DUMP ' + JSON.stringify({ accent, surface, id: site.id, tree }))
+        console.log('DRACULA_DUMP ' + JSON.stringify({ accent, surface, id: site.id, tree }))
         await ui.unmount()
       }
     }

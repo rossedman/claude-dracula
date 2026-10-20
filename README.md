@@ -1,30 +1,30 @@
 <p align="center"><a href="https://rossedman.github.io/claude-dracula/"><img src="docs/banner.png" alt="claude-dracula: your Claude conversation, now with bats" width="100%"></a></p>
 
-# Pixelstack
+# claude-dracula
 
 **[rossedman.github.io/claude-dracula](https://rossedman.github.io/claude-dracula/)**
 
 A Claude mod that redraws the conversation in the [Dracula](https://draculatheme.com) color scheme: purple, pink, cyan and green on a dark indigo-gray.
 
-![Pixelstack in the desktop app](docs/desktop.png)
+![claude-dracula in the desktop app](docs/desktop.png)
 
 <details>
 <summary>Terminal and accent colors</summary>
 
-![Pixelstack in a terminal using the Dracula color scheme](docs/terminal.png)
+![claude-dracula in a terminal using the Dracula color scheme](docs/terminal.png)
 
 ![The four accent presets](docs/accents.png)
 
 </details>
 
-The Pixelstack elements in these images are drawn from the exact output of the mod's render hooks; the window, prompt box and fonts around them are a stand-in for the app (the terminal image assumes a Dracula terminal background). See [Regenerate the screenshots](#regenerate-the-screenshots).
+The claude-dracula elements in these images are drawn from the exact output of the mod's render hooks; the window, prompt box and fonts around them are a stand-in for the app (the terminal image assumes a Dracula terminal background). See [Regenerate the screenshots](#regenerate-the-screenshots).
 
 ## Install
 
 At the prompt of a terminal session:
 
 ```
-/plugin install pixelstack --marketplace rossedman/claude-dracula
+/plugin install dracula --marketplace rossedman/claude-dracula
 ```
 
 Answer `y` to add the marketplace, then pick a scope.
@@ -32,7 +32,7 @@ Answer `y` to add the marketplace, then pick a scope.
 From a shell:
 
 ```sh
-claude plugin install pixelstack --marketplace rossedman/claude-dracula
+claude plugin install dracula --marketplace rossedman/claude-dracula
 ```
 
 In the desktop app: click + next to the prompt box, then Plugins, Add marketplace with `rossedman/claude-dracula`, then Add plugin.
@@ -47,18 +47,18 @@ In the desktop app: click + next to the prompt box, then Plugins, Add marketplac
 | Tool results | The usual result, hung from a gutter mark (red on errors) | terminal, desktop, vscode |
 | Working line | Segmented progress line in the accent; pink label like "Lurking…" or "Haunting…" | terminal, desktop, vscode |
 | Turn footer | Accent diamond + "Fed for 14s" | terminal |
-| End of turn | Optional organ sting (`/pixelstack sound on`) | macOS |
-| Above the prompt | Palette dots + "pixelstack · dracula" | terminal, desktop |
+| End of turn | Optional organ sting (`/dracula sound on`) | macOS |
+| Above the prompt | Palette dots + "dracula" | terminal, desktop |
 
-Expanded views (ctrl+o) always show the full default rows. The Claude mobile app runs the mod's commands but does not currently show its restyled rows. Pixelstack colors its own elements; for the full look, pair it with a Dracula theme for your terminal.
+Expanded views (ctrl+o) always show the full default rows. The Claude mobile app runs the mod's commands but does not currently show its restyled rows. claude-dracula colors its own elements; for the full look, pair it with a Dracula theme for your terminal.
 
 ## Commands
 
-- `/pixelstack on` / `/pixelstack off`
-- `/pixelstack accent <purple|pink|cyan|green|orange|#hex>`
-- `/pixelstack spooky on` / `off`: the bat avatar and vampire words (on by default)
-- `/pixelstack sound on` / `off`: an organ sting when a turn finishes (off by default; plays a preview when turned on; macOS only)
-- `/pixelstack status`
+- `/dracula on` / `/dracula off`
+- `/dracula accent <purple|pink|cyan|green|orange|#hex>`
+- `/dracula spooky on` / `off`: the bat avatar and vampire words (on by default)
+- `/dracula sound on` / `off`: an organ sting when a turn finishes (off by default; plays a preview when turned on; macOS only)
+- `/dracula status`
 
 Settings persist across sessions. The bat icon and the organ sting (`sounds/organ.wav`, synthesized for this project) are original.
 

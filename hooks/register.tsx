@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { Register } from 'claude-code'
 
-import type { PixelstackSettings } from '../types'
+import type { DraculaSettings } from '../types'
 import { batTile, sparkTile } from './icons'
 import {
   SEGMENTS,
@@ -16,12 +16,12 @@ import {
 } from './tokens'
 
 const STORE_KEY = 'settings'
-const settings = atom({ plugin: 'pixelstack', key: 'settings' } as const, {
+const settings = atom({ plugin: 'dracula', key: 'settings' } as const, {
   enabled: true,
   accent: defaultAccent,
   spooky: true,
   sound: false,
-} as PixelstackSettings)
+} as DraculaSettings)
 
 const ORGAN = { asset: 'sounds/organ.wav' } as const
 
@@ -45,16 +45,16 @@ function summarize(input: unknown): string {
 }
 
 const HELP = [
-  '`/pixelstack on` / `off` turns the theme on or off.',
-  `\`/pixelstack accent <${Object.keys(accents).join('|')}|#hex>\` swaps the accent.`,
-  '`/pixelstack spooky on` / `off` turns the bat avatar and vampire words on or off.',
-  '`/pixelstack sound on` / `off` plays an organ sting when a turn finishes (macOS).',
-  '`/pixelstack status` shows the current settings.',
+  '`/dracula on` / `off` turns the theme on or off.',
+  `\`/dracula accent <${Object.keys(accents).join('|')}|#hex>\` swaps the accent.`,
+  '`/dracula spooky on` / `off` turns the bat avatar and vampire words on or off.',
+  '`/dracula sound on` / `off` plays an organ sting when a turn finishes (macOS).',
+  '`/dracula status` shows the current settings.',
 ].join('\n')
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
-    const saved = (await $.store.get(STORE_KEY)) as Partial<PixelstackSettings> | undefined
+    const saved = (await $.store.get(STORE_KEY)) as Partial<DraculaSettings> | undefined
     if (saved && typeof saved === 'object') {
       await update($, settings, current => ({
         enabled: typeof saved.enabled === 'boolean' ? saved.enabled : current.enabled,
@@ -67,17 +67,17 @@ export const register: Register = on => {
       }))
     }
     await $.command.register({
-      name: 'pixelstack',
-      description: 'Pixelstack theme: on, off, accent <name|#hex>, spooky on|off, sound on|off, status',
+      name: 'dracula',
+      description: 'Dracula theme: on, off, accent <name|#hex>, spooky on|off, sound on|off, status',
     })
 
     return next(e)
   })
 
-  on('command.run', { command: 'pixelstack' }, async ($, e) => {
+  on('command.run', { command: 'dracula' }, async ($, e) => {
     const [verb = 'status', ...rest] = e.args.trim().split(/\s+/).filter(Boolean)
     const current = await read($, settings)
-    let changed: PixelstackSettings | null = null
+    let changed: DraculaSettings | null = null
 
     if (verb === 'on' || verb === 'off') {
       changed = { ...current, enabled: verb === 'on' }
@@ -95,7 +95,7 @@ export const register: Register = on => {
       const next = changed
       await update($, settings, () => next)
       await $.store.set(STORE_KEY, next)
-      $.ui.toast(next.enabled ? `Pixelstack on · accent ${next.accent}` : 'Pixelstack off')
+      $.ui.toast(next.enabled ? `Dracula on · accent ${next.accent}` : 'Dracula off')
       if (verb === 'sound' && next.sound) {
         void $.audio.play(ORGAN).catch(() => undefined)
       }
@@ -104,7 +104,7 @@ export const register: Register = on => {
     const now = changed ?? current
     const onOff = (value: boolean) => (value ? 'on' : 'off')
     return {
-      text: `Pixelstack is ${onOff(now.enabled)}, accent ${now.accent}, spooky ${onOff(now.spooky)}, sound ${onOff(now.sound)}.`,
+      text: `Dracula is ${onOff(now.enabled)}, accent ${now.accent}, spooky ${onOff(now.spooky)}, sound ${onOff(now.sound)}.`,
     }
   })
 
@@ -265,7 +265,7 @@ export const register: Register = on => {
             <Text color={color}>● </Text>
           ))}
         </Text>
-        <Text color={colors.comment}>pixelstack · dracula</Text>
+        <Text color={colors.comment}>dracula</Text>
       </Box>
     )
   })

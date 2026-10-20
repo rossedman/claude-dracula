@@ -309,7 +309,7 @@
       <div class="cta">
         <div class="install">
           <span class="sigil">$</span>
-          <code id="cmd-hero">claude plugin install pixelstack --marketplace rossedman/claude-dracula</code>
+          <code id="cmd-hero">claude plugin install dracula --marketplace rossedman/claude-dracula</code>
           <button class="copy" data-copy="#cmd-hero">Copy</button>
         </div>
         <a class="btn" href="#demo">See it move ↓</a>
@@ -331,7 +331,7 @@
         </div>
         <label class="toggle"><input type="checkbox" id="spooky" checked> Spooky</label>
         <button class="btn" id="replay" style="padding:6px 12px;font-size:13px">↻ Replay</button>
-        <span class="cmd-echo" id="echo" aria-live="polite">/pixelstack accent <b>purple</b></span>
+        <span class="cmd-echo" id="echo" aria-live="polite">/dracula accent <b>purple</b></span>
       </div>
 
       <div class="window" id="window">
@@ -344,7 +344,7 @@
           </div>
           <div class="band">
             <span class="dots" id="dots"></span>
-            <span>pixelstack · dracula</span>
+            <span>dracula</span>
           </div>
           <div class="composer">Reply to Claude…</div>
         </div>
@@ -405,11 +405,11 @@
       <article class="feature">
         <div class="viz"><button class="play" id="organ" aria-label="Play the organ sting"><span class="eq"><i></i><i></i><i></i></span>Hear the organ sting</button><audio id="organ-audio" src="assets/organ.wav" preload="none"></audio></div>
         <h3>Organ sting</h3>
-        <p>An optional organ chord when a turn finishes. Synthesized for this project. <code>/pixelstack sound on</code></p>
+        <p>An optional organ chord when a turn finishes. Synthesized for this project. <code>/dracula sound on</code></p>
         <div class="where"><span class="chip">macOS</span></div>
       </article>
       <article class="feature">
-        <div class="viz" style="gap:8px"><span><span class="pu">●</span> <span class="p">●</span> <span class="cy">●</span> <span class="gr">●</span> <span class="or">●</span></span><span class="c">pixelstack · dracula</span></div>
+        <div class="viz" style="gap:8px"><span><span class="pu">●</span> <span class="p">●</span> <span class="cy">●</span> <span class="gr">●</span> <span class="or">●</span></span><span class="c">dracula</span></div>
         <h3>Palette band</h3>
         <p>The palette's dots above the prompt, led by your accent, so you always know the coffin is open.</p>
         <div class="where"><span class="chip">terminal</span><span class="chip">desktop</span></div>
@@ -423,27 +423,27 @@
     <div>
       <div class="kicker">// one command</div>
       <h2>Tune it from <span class="grad">the prompt.</span></h2>
-      <p class="intro" style="margin-bottom:24px">Everything lives under <code>/pixelstack</code>. Settings persist across sessions, so pick an accent once and it sticks.</p>
+      <p class="intro" style="margin-bottom:24px">Everything lives under <code>/dracula</code>. Settings persist across sessions, so pick an accent once and it sticks.</p>
       <p style="color:var(--muted);margin:0">Accents take any of the five presets or your own hex color. Spooky mode is on by default; the sound is off until you ask for it.</p>
     </div>
     <div class="term">
       <div class="titlebar"><span></span><span></span><span></span><div class="t">~/code · claude</div></div>
 <pre><span class="c"># turn the theme on or off</span>
-<span class="p">/pixelstack</span> <span class="gr">on</span>
-<span class="p">/pixelstack</span> <span class="gr">off</span>
+<span class="p">/dracula</span> <span class="gr">on</span>
+<span class="p">/dracula</span> <span class="gr">off</span>
 
 <span class="c"># swap the accent: purple · pink · cyan · green · orange · #hex</span>
-<span class="p">/pixelstack</span> <span class="cy">accent</span> <span class="y">pink</span>
-<span class="p">/pixelstack</span> <span class="cy">accent</span> <span class="y">#FF5555</span>
+<span class="p">/dracula</span> <span class="cy">accent</span> <span class="y">pink</span>
+<span class="p">/dracula</span> <span class="cy">accent</span> <span class="y">#FF5555</span>
 
 <span class="c"># bat avatar and vampire words (on by default)</span>
-<span class="p">/pixelstack</span> <span class="cy">spooky</span> <span class="gr">off</span>
+<span class="p">/dracula</span> <span class="cy">spooky</span> <span class="gr">off</span>
 
 <span class="c"># organ sting when a turn finishes (macOS, off by default)</span>
-<span class="p">/pixelstack</span> <span class="cy">sound</span> <span class="gr">on</span>
+<span class="p">/dracula</span> <span class="cy">sound</span> <span class="gr">on</span>
 
 <span class="c"># what's on right now</span>
-<span class="p">/pixelstack</span> <span class="cy">status</span></pre>
+<span class="p">/dracula</span> <span class="cy">status</span></pre>
     </div>
   </div>
 </section>
@@ -502,15 +502,15 @@
       <div class="panel on" role="tabpanel" id="p-prompt" aria-labelledby="t-prompt">
         <ol class="steps">
           <li><b>At the prompt of a terminal session, run:</b>
-            <div class="install"><code id="cmd-prompt">/plugin install pixelstack --marketplace rossedman/claude-dracula</code><button class="copy" data-copy="#cmd-prompt">Copy</button></div></li>
+            <div class="install"><code id="cmd-prompt">/plugin install dracula --marketplace rossedman/claude-dracula</code><button class="copy" data-copy="#cmd-prompt">Copy</button></div></li>
           <li><b>Answer <kbd>y</kbd></b> to add the marketplace.</li>
-          <li><b>Pick a scope.</b> That's it. Try <code>/pixelstack accent pink</code>.</li>
+          <li><b>Pick a scope.</b> That's it. Try <code>/dracula accent pink</code>.</li>
         </ol>
       </div>
       <div class="panel" role="tabpanel" id="p-shell" aria-labelledby="t-shell">
         <ol class="steps">
           <li><b>Run:</b>
-            <div class="install"><span class="sigil">$</span><code id="cmd-shell">claude plugin install pixelstack --marketplace rossedman/claude-dracula</code><button class="copy" data-copy="#cmd-shell">Copy</button></div></li>
+            <div class="install"><span class="sigil">$</span><code id="cmd-shell">claude plugin install dracula --marketplace rossedman/claude-dracula</code><button class="copy" data-copy="#cmd-shell">Copy</button></div></li>
           <li><b>Start Claude Code.</b> The conversation is already in Dracula.</li>
         </ol>
       </div>
@@ -519,7 +519,7 @@
           <li><b>Click <kbd>+</kbd></b> next to the prompt box, then <b>Plugins</b>.</li>
           <li><b>Add marketplace</b> with:
             <div class="install"><code id="cmd-desktop">rossedman/claude-dracula</code><button class="copy" data-copy="#cmd-desktop">Copy</button></div></li>
-          <li><b>Add plugin</b> and pick <code>pixelstack</code>.</li>
+          <li><b>Add plugin</b> and pick <code>dracula</code>.</li>
         </ol>
       </div>
     </div>
@@ -536,11 +536,11 @@
     </details>
     <details>
       <summary>Can I get the default rows back?</summary>
-      <p>Anytime. <code>/pixelstack off</code> turns the theme off, and expanded views (<kbd>ctrl</kbd>+<kbd>o</kbd>) always show the full default rows.</p>
+      <p>Anytime. <code>/dracula off</code> turns the theme off, and expanded views (<kbd>ctrl</kbd>+<kbd>o</kbd>) always show the full default rows.</p>
     </details>
     <details>
       <summary>I want the colors but not the bats.</summary>
-      <p><code>/pixelstack spooky off</code> swaps the bat for a four-point spark and puts the usual working words back.</p>
+      <p><code>/dracula spooky off</code> swaps the bat for a four-point spark and puts the usual working words back.</p>
     </details>
     <details>
       <summary>Does it work in the mobile app?</summary>
@@ -555,7 +555,7 @@
     <div class="cta">
       <div class="install">
         <span class="sigil">$</span>
-        <code id="cmd-close">claude plugin install pixelstack --marketplace rossedman/claude-dracula</code>
+        <code id="cmd-close">claude plugin install dracula --marketplace rossedman/claude-dracula</code>
         <button class="copy" data-copy="#cmd-close">Copy</button>
       </div>
       <a class="btn primary" href="https://github.com/rossedman/claude-dracula"><svg width="16" height="16"><use href="#github"/></svg>Star on GitHub</a>
@@ -745,12 +745,12 @@
   }))
   document.querySelectorAll('.swatch').forEach(b => b.addEventListener('click', () => {
     state.accent = b.dataset.accent; applyAccent()
-    echo.innerHTML = `/pixelstack accent <b>${state.accent}</b>`
+    echo.innerHTML = `/dracula accent <b>${state.accent}</b>`
   }))
   document.getElementById('spooky').addEventListener('change', e => {
     state.spooky = e.target.checked; applyAvatars()
     if (!spinner.hidden) spinLabel.textContent = words()[wordIndex % words().length] + '…'
-    echo.innerHTML = `/pixelstack spooky <b>${state.spooky ? 'on' : 'off'}</b>`
+    echo.innerHTML = `/dracula spooky <b>${state.spooky ? 'on' : 'off'}</b>`
     document.querySelectorAll('.feature-word').forEach(f => (f.textContent = state.spooky ? 'Lurking…' : 'Thinking…'))
   })
   document.getElementById('replay').addEventListener('click', play)
