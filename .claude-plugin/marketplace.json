@@ -1,12 +1,12 @@
 {
-  "name": "pixelstack",
-  "description": "Pixelstack: restyles the Claude conversation in the Dracula color scheme.",
+  "name": "dracula",
+  "description": "Restyles the Claude conversation in the Dracula color scheme.",
   "owner": {
     "name": "Ross Edman"
   },
   "plugins": [
     {
-      "name": "pixelstack",
+      "name": "dracula",
       "source": "./"
     }
   ]

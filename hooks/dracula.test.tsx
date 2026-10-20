@@ -2,7 +2,7 @@ import { expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
 const run = (args: string) => ({
-  command: 'pixelstack',
+  command: 'dracula',
   args,
   origin: { kind: 'composer' as const },
   presentation: { isFullscreen: false, columns: 80 },
@@ -13,7 +13,7 @@ const SURFACES = ['terminal', 'desktop', 'vscode', 'mobile'] as const
 /** The engine beneath the plugin: registers commands, toasts, stores, and draws "engine" where asked. */
 function engine(on: On, stored: Record<string, unknown> = {}) {
   mock.store(on, stored)
-  on('command.register', () => ({ value: { command: 'pixelstack' } }))
+  on('command.register', () => ({ value: { command: 'dracula' } }))
   on('ui.toast', () => ({ value: undefined }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('ui.render', ($, e) => {
@@ -24,7 +24,7 @@ function engine(on: On, stored: Record<string, unknown> = {}) {
 
 const reply = (surface: (typeof SURFACES)[number]) =>
   ({
-    plugin: 'pixelstack',
+    plugin: 'dracula',
     component: 'AssistantMessage',
     surface,
     props: { text: 'Hello from **Claude**', isFirstOfReply: true },
@@ -47,7 +47,7 @@ test('the prompt becomes a bubble, other user rows stay the engine’s', async (
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
 
   const prompt = await $.ui.mount({
-    plugin: 'pixelstack',
+    plugin: 'dracula',
     component: 'UserMessage',
     surface: 'desktop',
     props: { text: 'build me a mod', origin: { kind: 'composer' }, isExpanded: false },
@@ -56,7 +56,7 @@ test('the prompt becomes a bubble, other user rows stay the engine’s', async (
   await prompt.unmount()
 
   const expanded = await $.ui.mount({
-    plugin: 'pixelstack',
+    plugin: 'dracula',
     component: 'UserMessage',
     surface: 'desktop',
     props: { text: 'build me a mod', origin: { kind: 'composer' }, isExpanded: true },
@@ -70,7 +70,7 @@ test('the spinner fills its blocks by mode', async ($, on) => {
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
 
   const ui = await $.ui.mount({
-    plugin: 'pixelstack',
+    plugin: 'dracula',
     component: 'Spinner',
     surface: 'terminal',
     props: { word: 'Working', message: null, suffix: '…', mode: 'tool-use' },
@@ -82,7 +82,7 @@ test('the spinner fills its blocks by mode', async ($, on) => {
   await ui.unmount()
 })
 
-test('/pixelstack off hands every site back to the engine', async ($, on) => {
+test('/dracula off hands every site back to the engine', async ($, on) => {
   engine(on)
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
 
@@ -108,7 +108,7 @@ test('saved settings come back at the next session', async ($, on) => {
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
 
   const status = await $.command.run(run('status'))
-  expect(status.text).toBe('Pixelstack is off, accent #8BE9FD, spooky on, sound off.')
+  expect(status.text).toBe('Dracula is off, accent #8BE9FD, spooky on, sound off.')
 })
 
 test('an accent saved by the old palette moves to Dracula purple', async ($, on) => {
@@ -116,7 +116,7 @@ test('an accent saved by the old palette moves to Dracula purple', async ($, on)
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
 
   const status = await $.command.run(run('status'))
-  expect(status.text).toBe('Pixelstack is on, accent #BD93F9, spooky on, sound off.')
+  expect(status.text).toBe('Dracula is on, accent #BD93F9, spooky on, sound off.')
 })
 
 test('spooky mode swaps the avatar and words, and turns off', async ($, on) => {
@@ -128,7 +128,7 @@ test('spooky mode swaps the avatar and words, and turns off', async ($, on) => {
   await replyUi.unmount()
 
   const turn = {
-    plugin: 'pixelstack',
+    plugin: 'dracula',
     component: 'TurnDuration',
     surface: 'terminal',
     props: { word: 'Baked', durationMs: 14000 },
@@ -153,7 +153,7 @@ test('a tool result keeps the engine drawing beside its gutter mark', async ($, 
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
 
   const ui = await $.ui.mount({
-    plugin: 'pixelstack',
+    plugin: 'dracula',
     component: 'ToolResult',
     surface: 'terminal',
     props: { tool_use_id: 't1', tool: 'Bash', output: { stdout: 'ok' }, isErrored: false },
