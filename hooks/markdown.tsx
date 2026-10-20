@@ -232,7 +232,7 @@ function table(rows: string[][], kit: Kit, mono: boolean): JSX.Element {
     </Text>
   )
   const line = (row: string[], header: boolean) => (
-    <Text mono={mono}>
+    <Text mono={mono} color={c.foreground}>
       {widths.flatMap((width, i) => {
         const cell = row[i] ?? ''
         const pad = ' '.repeat(width - visible(cell).length + 1)
@@ -243,7 +243,7 @@ function table(rows: string[][], kit: Kit, mono: boolean): JSX.Element {
               {inline(cell, kit)}
             </Text>
           ) : (
-            <Text>{inline(cell, kit)}</Text>
+            <Text color={c.foreground}>{inline(cell, kit)}</Text>
           ),
           pad.slice(1),
         ]
@@ -365,7 +365,7 @@ export function draculaMarkdown(text: string, kit: Kit, mono: boolean): JSX.Elem
               <Box flexDirection="row" paddingLeft={item.depth * 2}>
                 <Text color={c.cyan}>{`${item.marker} `}</Text>
                 <Box flexGrow={1} flexShrink={1}>
-                  <Text>
+                  <Text color={c.foreground}>
                     {task && (
                       <Text color={task[1] === ' ' ? c.comment : c.green}>
                         {task[1] === ' ' ? '☐ ' : '☑ '}
@@ -398,7 +398,7 @@ export function draculaMarkdown(text: string, kit: Kit, mono: boolean): JSX.Elem
       paragraph.push(current)
       i++
     }
-    blocks.push(<Text>{inline(paragraph.join('\n'), kit)}</Text>)
+    blocks.push(<Text color={c.foreground}>{inline(paragraph.join('\n'), kit)}</Text>)
   }
 
   return (

@@ -136,9 +136,63 @@ const SITES = [
   },
 ] as const
 
-for (const accent of ['purple', 'pink', 'cyan', 'green']) {
+// The crypt pane, drawn after the sample calls below have run.
+const PANE = {
+  id: 'pane',
+  component: 'Pane',
+  requestId: 'dracula-crypt',
+  props: { title: 'Crypt', isFocused: false, bodyColumns: 44, placement: 'dock', scroll: { offset: 0, bodyRows: 30 } },
+}
+
+// What the sample session ran, so the band and the crypt have something to count.
+const CALLS = [
+  { tool: 'Read', file_path: 'internal/retry/retry.go' },
+  { tool: 'Read', file_path: 'internal/retry/retry_test.go' },
+  { tool: 'Read', file_path: 'go.mod' },
+  { tool: 'Grep', pattern: 'Retry(' },
+  { tool: 'Glob', pattern: '**/*.go' },
+  { tool: 'Edit', file_path: 'internal/retry/retry.go' },
+  { tool: 'Edit', file_path: 'internal/retry/retry.go' },
+  { tool: 'Write', file_path: 'internal/retry/retry_test.go' },
+  { tool: 'Edit', file_path: 'README.md' },
+  { tool: 'Bash', command: 'go vet ./...' },
+  { tool: 'Bash', command: 'go test ./internal/retry/...' },
+  { tool: 'Bash', command: 'go test -race ./...' },
+]
+
+const PATCHES: Record<string, string[]> = {
+  'internal/retry/retry.go': ['-a', '+b', '+c', '+d', '+e', '+f', '+g'],
+  'internal/retry/retry_test.go': ['+a', '+b', '+c', '+d', '+e', '+f', '+g', '+h', '+i', '+j', '+k', '+l', '+m', '+n'],
+  'README.md': ['-a', '-b', '+c', '+d', '+e'],
+}
+
+// 2:13am at -0500 on 20 October 2026: the witching hour.
+const NOW = Date.UTC(2026, 9, 20, 7, 13)
+
+for (const accent of ['purple', 'pink', 'cyan', 'green', 'alucard']) {
   test(`dump (${accent})`, async ($, on) => {
     mock.store(on, {})
+    mock.clock(on, { now: NOW })
+    on('process.run', (_, e) => ({
+      value: {
+        exitCode: 0,
+        stdout: e.argv[0] === 'git' ? 'feat/retry-jitter\n' : '-0500\n',
+        stderr: '',
+      },
+    }))
+    on('tool.call', (_, e) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const call = e as any
+      if (call.tool === 'Bash') {
+        return call.command === 'go test -race ./...'
+          ? { result: { stdout: '', stderr: 'race detected', interrupted: false }, isError: true }
+          : { result: { stdout: 'ok', stderr: '', interrupted: false } }
+      }
+      const lines = PATCHES[call.file_path]
+      return lines
+        ? { result: { filePath: call.file_path, structuredPatch: [{ oldStart: 1, oldLines: 1, newStart: 1, newLines: 1, lines }] } }
+        : { result: { file: { filePath: call.file_path, numLines: 40, startLine: 1, totalLines: 40 } } }
+    })
     on('command.register', () => ({ value: { command: 'dracula' } }))
     on('ui.toast', () => ({ value: undefined }))
     on('session.start', (_, e) => ({ cwd: e.cwd }))
@@ -150,15 +204,20 @@ for (const accent of ['purple', 'pink', 'cyan', 'green']) {
     await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
     await $.command.run({
       command: 'dracula',
-      args: `accent ${accent}`,
+      args: accent === 'alucard' ? 'light' : `accent ${accent}`,
       origin,
       presentation: { isFullscreen: false, columns: 80 },
     })
+    for (const call of CALLS) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await $.tool.call(call as any).catch(() => undefined)
+    }
 
     for (const surface of ['desktop', 'terminal'] as const) {
-      for (const site of SITES) {
+      for (const site of [...SITES, PANE]) {
+        const requestId = 'requestId' in site ? site.requestId : undefined
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const ui = await $.ui.mount({ plugin: 'dracula', surface, component: site.component, props: site.props } as any)
+        const ui = await $.ui.mount({ plugin: 'dracula', surface, component: site.component, requestId, props: site.props } as any)
         const tree = await ui.drawn()
         console.log('DRACULA_DUMP ' + JSON.stringify({ accent, surface, id: site.id, tree }))
         await ui.unmount()
