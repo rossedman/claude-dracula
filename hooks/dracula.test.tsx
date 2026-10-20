@@ -76,7 +76,8 @@ test('the spinner fills its blocks by mode', async ($, on) => {
     props: { word: 'Working', message: null, suffix: '…', mode: 'tool-use' },
   })
   const lines = await ui.findAll({ type: 'Text', text: /^━+$/ })
-  expect(lines.map(line => line.text).slice(-2)).toEqual(['━━━━━━', '━━'])
+  expect(lines.map(line => line.text).slice(-2)).toEqual(['━━━━━━━━', '━━━'])
+  expect(await ui.find({ type: 'Text', text: '🦇' })).toBeTruthy()
   const label = await ui.find({ type: 'Text', text: /…$/ })
   expect(label?.text).not.toContain('Working')
   await ui.unmount()
@@ -108,7 +109,9 @@ test('saved settings come back at the next session', async ($, on) => {
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
 
   const status = await $.command.run(run('status'))
-  expect(status.text).toBe('Dracula is off, accent #8BE9FD, spooky on, sound off.')
+  expect(status.text).toBe(
+    'Dracula is off, theme dracula, accent #8BE9FD, spooky on, sound off, persona off.',
+  )
 })
 
 test('an accent saved by the old palette moves to Dracula purple', async ($, on) => {
@@ -116,7 +119,9 @@ test('an accent saved by the old palette moves to Dracula purple', async ($, on)
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
 
   const status = await $.command.run(run('status'))
-  expect(status.text).toBe('Dracula is on, accent #BD93F9, spooky on, sound off.')
+  expect(status.text).toBe(
+    'Dracula is on, theme dracula, accent #BD93F9, spooky on, sound off, persona off.',
+  )
 })
 
 test('spooky mode swaps the avatar and words, and turns off', async ($, on) => {
@@ -148,7 +153,31 @@ test('spooky mode swaps the avatar and words, and turns off', async ($, on) => {
   await plainTurn.unmount()
 })
 
-test('a tool result keeps the engine drawing beside its gutter mark', async ($, on) => {
+test('a tool result hangs from its gutter mark, the engine drawing tools the mod does not', async ($, on) => {
+  engine(on)
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+
+  const result = (tool: string, output: unknown) =>
+    $.ui.mount({
+      plugin: 'dracula',
+      component: 'ToolResult',
+      surface: 'terminal',
+      props: { tool_use_id: 't1', tool, output, isErrored: false },
+    })
+
+  const shell = await result('Bash', { stdout: 'ok\n', stderr: '', interrupted: false })
+  expect(await shell.find({ type: 'Text', text: /^╰$/ })).toBeTruthy()
+  expect(await shell.find({ type: 'Text', text: /^ok$/ })).toBeTruthy()
+  expect(await shell.find({ type: 'Text', text: /engine/ })).toBeFalsy()
+  await shell.unmount()
+
+  const other = await result('WebFetch', { result: 'page' })
+  expect(await other.find({ type: 'Text', text: /^╰$/ })).toBeTruthy()
+  expect(await other.find({ type: 'Text', text: /engine/ })).toBeTruthy()
+  await other.unmount()
+})
+
+test('an edit is drawn as a Dracula diff', async ($, on) => {
   engine(on)
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
 
@@ -156,11 +185,113 @@ test('a tool result keeps the engine drawing beside its gutter mark', async ($, 
     plugin: 'dracula',
     component: 'ToolResult',
     surface: 'terminal',
-    props: { tool_use_id: 't1', tool: 'Bash', output: { stdout: 'ok' }, isErrored: false },
+    props: {
+      tool_use_id: 't1',
+      tool: 'Edit',
+      isErrored: false,
+      output: {
+        filePath: 'main.go',
+        structuredPatch: [{ oldStart: 3, oldLines: 2, newStart: 3, newLines: 2, lines: [' func main() {', '-\told()', '+\tnew()'] }],
+      },
+    },
   })
-  expect(await ui.find({ type: 'Text', text: /^╰$/ })).toBeTruthy()
-  expect(await ui.find({ type: 'Text', text: /engine/ })).toBeTruthy()
+  const color = async (text: RegExp) =>
+    ((await ui.find({ type: 'Text', text })) as { props?: { color?: string } } | undefined)?.props?.color
+  expect(await color(/^\+1$/)).toBe('#50FA7B')
+  expect(await color(/^−1$/)).toBe('#FF5555')
+  expect(await color(/^ {5}new\(\)$/)).toBe('#50FA7B')
+  expect(await color(/^ {5}old\(\)$/)).toBe('#FF5555')
+  expect(await color(/^func$/)).toBe('#FF79C6')
   await ui.unmount()
+})
+
+test('a folded run of calls is one row of tool chips', async ($, on) => {
+  engine(on)
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+
+  const call = (tool: string) => ({ tool, input: {}, isRunning: false, isErrored: false, isInterrupted: false })
+  const ui = await $.ui.mount({
+    plugin: 'dracula',
+    component: 'ToolGroup',
+    surface: 'terminal',
+    props: { calls: [call('Read'), call('Read'), call('Grep')], isActive: false, isExpanded: false },
+  })
+  expect(await ui.find({ type: 'Text', text: /^ Read ×2 $/ })).toBeTruthy()
+  expect(await ui.find({ type: 'Text', text: /^ Grep $/ })).toBeTruthy()
+  await ui.unmount()
+})
+
+test('/dracula light draws in Alucard, /dracula dark brings Dracula back', async ($, on) => {
+  engine(on)
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+
+  const heading = async () => {
+    const ui = await $.ui.mount({
+      plugin: 'dracula',
+      component: 'AssistantMessage',
+      surface: 'desktop',
+      props: { text: '# Title', isFirstOfReply: true },
+    })
+    const found = (await ui.find({ type: 'Text', text: /^Title$/ })) as { props?: { color?: string } } | undefined
+    await ui.unmount()
+    return found?.props?.color
+  }
+  expect((await $.command.run(run('light'))).text).toContain('theme alucard')
+  expect(await heading()).toBe('#644AC9')
+  await $.command.run(run('dark'))
+  expect(await heading()).toBe('#BD93F9')
+})
+
+test('the persona adds one section to the system prompt, only when on', async ($, on) => {
+  engine(on)
+  on('prompt.compose', () => ({ sections: [{ id: 'intro', text: 'You are Claude.', scope: 'shared' }] }))
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+
+  const compose = () =>
+    $.prompt.compose({ model: 'm', promptModel: 'm', surfaces: ['terminal'], tools: [], outputStyle: null, traits: [] })
+  expect((await compose()).sections.map(section => section.id)).toEqual(['intro'])
+  await $.command.run(run('persona on'))
+  expect((await compose()).sections.map(section => section.id)).toEqual(['intro', 'dracula:persona'])
+})
+
+test('the crypt counts calls and the lines each edit changed, and an error tolls', async ($, on) => {
+  engine(on)
+  const played: string[] = []
+  on('audio.play', (_, e) => {
+    played.push(JSON.stringify(e))
+    return { value: undefined }
+  })
+  on('tool.call', (_, e) =>
+    e.tool === 'Bash'
+      ? { result: { stdout: '', stderr: 'boom', interrupted: false }, isError: true }
+      : {
+          result: {
+            filePath: 'src/app.ts',
+            structuredPatch: [{ oldStart: 1, oldLines: 1, newStart: 1, newLines: 2, lines: ['-a', '+b', '+c'] }],
+          },
+        },
+  )
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  await $.command.run(run('sound on'))
+  const preview = played.length
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await $.tool.call({ tool: 'Edit', file_path: 'src/app.ts', old_string: 'a', new_string: 'b\nc' } as any)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await $.tool.call({ tool: 'Bash', command: 'false' } as any)
+  const pane = await $.ui.mount({
+    plugin: 'dracula',
+    component: 'Pane',
+    surface: 'terminal',
+    requestId: 'dracula-crypt',
+    props: { title: 'Crypt', isFocused: false, bodyColumns: 60, placement: 'dock', scroll: { offset: 0, bodyRows: 20 } },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any)
+  expect(await pane.find({ type: 'Text', text: /^src\/app\.ts$/ })).toBeTruthy()
+  expect(await pane.find({ type: 'Text', text: /^\+2$/ })).toBeTruthy()
+  expect(await pane.find({ type: 'Text', text: /1 call failed/ })).toBeTruthy()
+  await pane.unmount()
+  expect(played.slice(preview).join()).toContain('sounds/toll.wav')
 })
 
 test('the organ plays at the end of an answered turn only when sound is on', async ($, on) => {

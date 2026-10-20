@@ -42,13 +42,17 @@ In the desktop app: click + next to the prompt box, then Plugins, Add marketplac
 | Site | Drawing | Surfaces |
 | --- | --- | --- |
 | Your prompt | Current-line bubble with a rounded accent border, right-aligned | terminal, desktop, vscode |
-| Claude's reply | Bat avatar (spark with spooky off) + rounded comment-colored card; the markdown inside in Dracula colors (purple headings, orange bold, yellow italic, green code, cyan links and list markers) with Dracula syntax colors in code blocks | terminal, desktop, vscode |
-| Tool calls | Status dot (orange running, green done, red error, gray stopped), tool in cyan, first argument in comment gray | terminal, desktop, vscode |
-| Tool results | The usual result, hung from a gutter mark (red on errors) | terminal, desktop, vscode |
-| Working line | Segmented progress line in the accent; pink label like "Lurking…" or "Haunting…" | terminal, desktop, vscode |
+| Claude's reply | Bat avatar (spark with spooky off) + a raised rounded card (a moon-marked header on desktop); the markdown inside in Dracula colors (purple headings, orange bold, yellow italic, green code, cyan links and list markers, box-drawn tables) with Dracula syntax colors in code blocks | terminal, desktop, vscode |
+| Tool calls | Status dot (orange running, green done, red error, gray stopped), the tool in its own color, first argument in comment gray; shell commands as a pink `$` and the command in yellow | terminal, desktop, vscode |
+| Tool results | Hung from a gutter mark: Edit/Write as a Dracula diff (counts, numbered lines, tinted adds and removes), Bash as a terminal card, Read as one line, Grep/Glob as cyan hits; errors and other tools keep the usual result, the mark red on errors | terminal, desktop, vscode |
+| Folded tool runs | One row of tool chips, like `Read ×3` `Grep` | terminal, desktop, vscode |
+| Working line | A track that fills as the turn moves along, a bat flying over it; pink label like "Lurking…" or "Haunting…" | terminal, desktop, vscode |
 | Turn footer | Accent diamond + "Fed for 14s" | terminal |
-| End of turn | Optional organ sting (`/dracula sound on`) | macOS |
-| Above the prompt | Palette dots + "dracula" | terminal, desktop |
+| Sound (`/dracula sound on`) | Organ sting at the end of a turn, a low toll when a tool errors, a wing flap when a long shell command finishes, a rising arpeggio for an approved plan | macOS |
+| Above the prompt | Palette dots, the theme, the git branch, the session's tool count and failures, the moon's phase and the hour ("the witching hour") | terminal, desktop |
+| Prompt footer | Mode labels as accent pills; the hint in comment gray (desktop) | terminal, desktop |
+| Crypt pane (`/dracula crypt`) | Tools run as bars in each tool's color, files touched with their added and removed lines | terminal, desktop, vscode |
+| Persona (`/dracula persona on`) | A faint gothic voice in Claude's replies, kept out of code and anything serious | all |
 
 Expanded views (ctrl+o) always show the full default rows. The Claude mobile app runs the mod's commands but does not currently show its restyled rows. claude-dracula colors its own elements; for the full look, pair it with a Dracula theme for your terminal.
 
@@ -56,11 +60,14 @@ Expanded views (ctrl+o) always show the full default rows. The Claude mobile app
 
 - `/dracula on` / `/dracula off`
 - `/dracula accent <purple|pink|cyan|green|orange|#hex>`
-- `/dracula spooky on` / `off`: the bat avatar and vampire words (on by default)
-- `/dracula sound on` / `off`: an organ sting when a turn finishes (off by default; plays a preview when turned on; macOS only)
+- `/dracula dark` / `light`: Dracula, or its light sibling [Alucard](https://draculatheme.com/spec) for light terminals and light mode (presets follow the theme)
+- `/dracula spooky on` / `off`: the bat avatar, vampire words and the hour's name (on by default)
+- `/dracula sound on` / `off`: the organ sting and the tool cues (off by default; plays a preview when turned on; macOS only)
+- `/dracula persona on` / `off`: a faint gothic voice (off by default)
+- `/dracula crypt`: opens the crypt pane
 - `/dracula status`
 
-Settings persist across sessions. The bat icon and the organ sting (`sounds/organ.wav`, synthesized for this project) are original.
+Settings persist across sessions. The bat and moon icons and the sounds in `sounds/` (synthesized for this project; `python3 scripts/sounds.py` rebuilds the cues) are original.
 
 ## Palette
 

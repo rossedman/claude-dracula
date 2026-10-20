@@ -1,6 +1,6 @@
 {
   "name": "dracula",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Redraws the Claude conversation in the Dracula color scheme.",
   "author": {
     "name": "Ross Edman"
