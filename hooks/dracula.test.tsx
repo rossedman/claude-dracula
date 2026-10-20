@@ -205,7 +205,7 @@ test('an edit is drawn as a Dracula diff', async ($, on) => {
   await ui.unmount()
 })
 
-test('a folded run of calls is one row of tool chips', async ($, on) => {
+test('a folded run of calls is one line of colored tool names', async ($, on) => {
   engine(on)
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
 
@@ -216,12 +216,17 @@ test('a folded run of calls is one row of tool chips', async ($, on) => {
     surface: 'terminal',
     props: { calls: [call('Read'), call('Read'), call('Grep')], isActive: false, isExpanded: false },
   })
-  expect(await ui.find({ type: 'Text', text: /^ Read ×2 $/ })).toBeTruthy()
-  expect(await ui.find({ type: 'Text', text: /^ Grep $/ })).toBeTruthy()
+  const color = async (text: RegExp) =>
+    ((await ui.find({ type: 'Text', text })) as { props?: { color?: string } } | undefined)?.props?.color
+  expect(await color(/^Read$/)).toBe('#8BE9FD')
+  expect(await color(/^ ×2$/)).toBe('#6272A4')
+  expect(await color(/^Grep$/)).toBe('#FF79C6')
+  const texts = (await ui.findAll({ type: 'Text' })) as { props?: { backgroundColor?: string } }[]
+  expect(texts.some(text => text.props?.backgroundColor)).toBe(false)
   await ui.unmount()
 })
 
-test('MCP tool chips read server · tool, stay on one line and wrap between chips', async ($, on) => {
+test('MCP tools in a folded run read server/tool', async ($, on) => {
   engine(on)
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
 
@@ -240,11 +245,9 @@ test('MCP tool chips read server · tool, stay on one line and wrap between chip
       isExpanded: false,
     },
   })
-  expect(await ui.find({ type: 'Text', text: /^ buildkite · list_builds $/ })).toBeTruthy()
-  expect(await ui.find({ type: 'Text', text: /^ terminal · run_in_terminal $/ })).toBeTruthy()
-  const chip = (await ui.find({ type: 'Text', text: /^ batch $/ })) as { props?: { wrap?: string } } | undefined
-  expect(chip?.props?.wrap).toBe('truncate-end')
-  expect(await ui.find({ type: 'Box', props: { flexWrap: 'wrap' } })).toBeTruthy()
+  expect(await ui.find({ type: 'Text', text: /^buildkite\/list_builds$/ })).toBeTruthy()
+  expect(await ui.find({ type: 'Text', text: /^terminal\/run_in_terminal$/ })).toBeTruthy()
+  expect(await ui.find({ type: 'Text', text: /^batch$/ })).toBeTruthy()
   await ui.unmount()
 })
 
