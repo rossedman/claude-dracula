@@ -3,13 +3,14 @@
 
 Input: the output of `claude plugin test` run with scripts/dump.test.tsx,
 which prints one `DRACULA_DUMP {json}` line per drawn site.
-Output: PNGs in docs/ (desktop and terminal previews, plus an accent strip).
+Output: PNGs in docs/ (desktop, terminal and Alucard previews, plus an accent strip).
 
 The claude-dracula parts are drawn exactly from the mod's trees. The window,
 prompt box and fonts around them are a neutral stand-in for the app.
 
 Usage: python3 scripts/screenshots.py <test-output.txt> <out-dir> [--html]
 --html writes the pages as .html beside where the PNGs would go, with no browser.
+PNGs use Playwright when installed, else a local Chrome or Chromium in headless mode.
 """
 import html
 import json
@@ -88,7 +89,7 @@ def render(node, unit):
         if p.get("strikethrough"):
             s.append("text-decoration:line-through")
         if p.get("mono") and unit == 8:
-            s.append("font-family:'DejaVu Sans Mono',ui-monospace,monospace;font-size:13px")
+            s.append(f"font-family:{MONO};font-size:13px")
         if unit == 8 and p.get("size") in ("title", "heading"):
             s.append("font-size:" + ("20px" if p["size"] == "title" else "17px"))
         if unit == 8 and p.get("size") == "footnote":
@@ -109,20 +110,31 @@ def render(node, unit):
     return inner
 
 
-BASE_CSS = """
-*{box-sizing:border-box}
-body{margin:0;background:#141413;color:#E8E6DF;-webkit-font-smoothing:antialiased}
-.md p{margin:.4em 0}
-.md pre{background:rgba(0,0,0,.22);border:1px solid rgba(98,114,164,.35);border-radius:6px;padding:10px 12px;overflow:hidden;margin:.6em 0;font-size:13px;line-height:1.45}
-.md code{font-family:'DejaVu Sans Mono','Noto Color Emoji',ui-monospace,monospace}
-.row{margin:10px 0}
+MONO = "'SF Mono','JetBrains Mono','DejaVu Sans Mono',Menlo,'Apple Color Emoji','Noto Color Emoji',monospace"
+SANS = "-apple-system,BlinkMacSystemFont,'Inter','DejaVu Sans','Apple Color Emoji','Noto Color Emoji',system-ui,sans-serif"
+
+BASE_CSS = f"""
+*{{box-sizing:border-box}}
+body{{margin:0;background:#0E0E0D;color:#E8E6DF;-webkit-font-smoothing:antialiased}}
+.md p{{margin:.4em 0}}
+.md pre{{background:rgba(0,0,0,.22);border:1px solid rgba(98,114,164,.35);border-radius:6px;padding:10px 12px;overflow:hidden;margin:.6em 0;font-size:13px;line-height:1.45}}
+.md code{{font-family:{MONO}}}
+.row{{margin:10px 0}}
+.lights{{display:flex;gap:8px}}
+.lights i{{width:12px;height:12px;border-radius:50%;display:block}}
 """
 
+LIGHTS = '<span class="lights"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i></span>'
 
-def desktop_page(trees, accent):
-    g = lambda i: render(trees[(accent, "desktop", i)], 8)
-    body = f"""
-<div style="width:880px;padding:28px 36px 24px;font-family:'DejaVu Sans','Noto Color Emoji',system-ui,sans-serif;font-size:15px;line-height:1.55;background:#1F1E1C">
+
+def doc(body):
+    return f"<!doctype html><html><head><meta charset=utf-8><style>{BASE_CSS}</style></head><body>{body}</body></html>"
+
+
+def transcript(g, surface):
+    """The sample conversation, top to bottom, as the app stacks it."""
+    turn = f'<div class="row">{g("turn")}</div>' if surface == "terminal" else ""
+    return f"""
   <div class="row">{g('user')}</div>
   <div class="row">{g('group')}</div>
   <div class="row">{g('reply')}</div>
@@ -130,41 +142,141 @@ def desktop_page(trees, accent):
   <div style="margin:-4px 0 10px 4px">{g('result')}</div>
   <div class="row">{g('edit')}</div>
   <div style="margin:-4px 0 10px 4px">{g('diff')}</div>
-  <div class="row" style="margin-top:14px">{g('spinner')}</div>
-  <div style="margin-top:22px;display:flex;justify-content:space-between">{g('band')}{g('mode')}</div>
-  <div style="margin-top:8px;border:1px solid #3a3833;border-radius:14px;padding:14px 16px;color:#8d8a82;background:#2A2926">Reply to Claude…</div>
+  {turn}
+  <div class="row" style="margin-top:14px">{g('spinner')}</div>"""
+
+
+def desktop_page(trees, accent, light=False):
+    """The desktop app: a window with the conversation and the crypt docked on the right."""
+    g = lambda i: render(trees[(accent, "desktop", i)], 8)
+    win, chrome, line, field, hint = (
+        ("#FAF9F5", "#F0EEE6", "#E3E0D6", "#FFFFFF", "#8A877E") if light else ("#262624", "#1F1E1C", "#33322E", "#30302E", "#8D8A82")
+    )
+    title_color = "#3D3929" if light else "#C2C0B6"
+    body = f"""
+<div style="width:1240px;padding:28px;background:{'#E9E6DC' if light else '#0E0E0D'}">
+ <div style="border-radius:12px;overflow:hidden;border:1px solid {line};box-shadow:0 24px 60px rgba(0,0,0,.45);background:{win};font-family:{SANS};font-size:15px;line-height:1.55">
+  <div style="height:44px;display:flex;align-items:center;gap:18px;padding:0 16px;background:{chrome};border-bottom:1px solid {line}">
+    {LIGHTS}
+    <span style="font-size:13px;color:{title_color};font-weight:600">Retry with backoff</span>
+    <span style="font-size:12px;color:{hint}">~/code/retry · feat/retry-jitter</span>
+  </div>
+  <div style="display:flex">
+   <div style="flex:1;min-width:0;padding:22px 34px 22px">
+    {transcript(g, 'desktop')}
+    <div style="margin-top:22px;white-space:nowrap">{g('band')}</div>
+    <div style="margin-top:8px;border:1px solid {line};border-radius:14px;padding:14px 16px 12px;color:{hint};background:{field}">
+      Reply to Claude…<div style="margin-top:14px;display:flex;justify-content:space-between;font-size:12px"><span>＋ &nbsp;⌘ &nbsp;@</span><span>Opus 5.5 &nbsp;↑</span></div>
+    </div>
+    <div style="margin-top:8px">{g('mode')}</div>
+   </div>
+   <div style="width:384px;flex-shrink:0;border-left:1px solid {line};background:{chrome}">
+    <div style="height:40px;display:flex;align-items:center;padding:0 16px;font-size:12px;color:{hint};border-bottom:1px solid {line}">Crypt <span style="margin-left:auto">✕</span></div>
+    <div style="padding:14px 16px;font-family:{MONO};font-size:13px;white-space:nowrap">{g('pane')}</div>
+   </div>
+  </div>
+ </div>
 </div>"""
-    return f"<!doctype html><html><head><meta charset=utf-8><style>{BASE_CSS}</style></head><body>{body}</body></html>"
+    return doc(body)
 
 
 def terminal_page(trees, accent):
+    """A terminal window in the Dracula scheme, with the crypt docked beside the conversation."""
     g = lambda i: render(trees[(accent, "terminal", i)], 9)
     body = f"""
-<div style="width:880px;padding:22px 26px;font-family:'DejaVu Sans Mono','Noto Color Emoji',ui-monospace,monospace;font-size:14px;line-height:1.5;background:#282A36;color:#F8F8F2">
-  <div class="row">{g('user')}</div>
-  <div class="row">{g('group')}</div>
-  <div class="row">{g('reply')}</div>
-  <div class="row">{g('tool2')}</div>
-  <div style="margin:-4px 0 10px 4px">{g('result')}</div>
-  <div class="row">{g('edit')}</div>
-  <div style="margin:-4px 0 10px 4px">{g('diff')}</div>
-  <div class="row">{g('turn')}</div>
-  <div class="row" style="margin-top:14px">{g('spinner')}</div>
-  <div style="margin-top:16px;display:flex;justify-content:space-between">{g('band')}{g('mode')}</div>
-  <div style="margin-top:6px;border:1px solid #44475A;padding:6px 10px;color:#6272A4">&gt; </div>
+<div style="width:1240px;padding:28px;background:#0E0E0D">
+ <div style="border-radius:10px;overflow:hidden;border:1px solid #44475A;box-shadow:0 24px 60px rgba(0,0,0,.5);background:#282A36;color:#F8F8F2;font-family:{MONO};font-size:14px;line-height:1.5">
+  <div style="height:34px;display:flex;align-items:center;padding:0 14px;background:#21222C;border-bottom:1px solid #191A21;font-family:{SANS};font-size:12px;color:#6272A4">
+    {LIGHTS}<span style="flex:1;text-align:center;margin-right:52px">claude — ~/code/retry — 132×44</span>
+  </div>
+  <div style="display:flex">
+   <div style="flex:1;min-width:0;padding:16px 22px 18px">
+    {transcript(g, 'terminal')}
+    <div style="margin-top:16px;white-space:nowrap">{g('band')}</div>
+    <div style="margin-top:6px;border:1px solid #44475A;border-radius:6px;padding:6px 10px;color:#6272A4">&gt; <span style="background:#F8F8F2;color:#282A36">&nbsp;</span></div>
+    <div style="margin-top:6px">{g('mode')}</div>
+   </div>
+   <div style="width:410px;flex-shrink:0;border-left:1px solid #44475A;padding:16px 18px;white-space:nowrap">{g('pane')}</div>
+  </div>
+ </div>
 </div>"""
-    return f"<!doctype html><html><head><meta charset=utf-8><style>{BASE_CSS}</style></head><body>{body}</body></html>"
+    return doc(body)
 
 
 def accents_page(trees):
     cells = ""
     for accent in ["purple", "pink", "cyan", "green"]:
         g = lambda i: render(trees[(accent, "desktop", i)], 8)
-        cells += f"""<div style="flex:1;min-width:0;padding:14px 16px;background:#1F1E1C;border:1px solid #2f2d29">
-          <div style="font-size:12px;color:#8d8a82;margin-bottom:10px;font-family:'DejaVu Sans Mono',monospace">/dracula accent {accent}</div>
-          <div style="margin-bottom:10px">{g('spinner')}</div>{g('band')}</div>"""
-    body = f'<div style="width:880px;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px;font-family:\'DejaVu Sans\',sans-serif;font-size:14px;background:#141413">{cells}</div>'
-    return f"<!doctype html><html><head><meta charset=utf-8><style>{BASE_CSS}</style></head><body>{body}</body></html>"
+        cells += f"""<div style="flex:1;min-width:0;padding:14px 16px;background:#262624;border:1px solid #33322E;border-radius:10px">
+          <div style="font-size:12px;color:#8d8a82;margin-bottom:10px;font-family:{MONO}">/dracula accent {accent}</div>
+          <div style="margin-bottom:10px">{g('spinner')}</div><div style="white-space:nowrap">{g('band')}</div></div>"""
+    body = f'<div style="width:840px;display:grid;grid-template-columns:1fr;gap:12px;padding:20px;font-family:{SANS};font-size:14px;background:#0E0E0D">{cells}</div>'
+    return doc(body)
+
+
+def capture(pages, out):
+    """PNGs at 2x, with Playwright when it is installed, else the local Chrome."""
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        return chrome_capture(pages, out)
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch()
+        page = browser.new_page(device_scale_factor=2)
+        for name, page_doc in pages.items():
+            page.set_content(page_doc)
+            page.locator("body > div").first.screenshot(path=str(out / name))
+            print("wrote", out / name)
+        browser.close()
+
+
+CHROMES = [
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    "google-chrome",
+    "chromium",
+]
+
+SENTINEL = "#FF00FE"
+
+
+def chrome_capture(pages, out):
+    """Headless Chrome on a tall window over a sentinel backdrop, cropped to the page with Pillow."""
+    import shutil
+    import subprocess
+    import tempfile
+    import time
+
+    from PIL import Image, ImageChops
+
+    chrome = next((c for c in CHROMES if Path(c).exists() or shutil.which(c)), None)
+    if not chrome:
+        sys.exit("no Playwright and no Chrome: pip install playwright && playwright install chromium")
+    with tempfile.TemporaryDirectory() as tmp:
+        for name, page_doc in pages.items():
+            src = Path(tmp) / name.replace(".png", ".html")
+            src.write_text(page_doc.replace("body{margin:0;background:", f"body{{margin:0;background:{SENTINEL};--was:"))
+            shot = Path(tmp) / name
+            # A profile of its own, so a Chrome already open doesn't take the job. Some managed
+            # Chromes write the shot and then never exit, so wait for the file and stop it.
+            argv = [chrome, "--headless", f"--user-data-dir={tmp}/profile", "--hide-scrollbars", "--no-first-run",
+                    "--window-size=1400,3200", "--force-device-scale-factor=2", f"--screenshot={shot}", src.as_uri()]
+            child = subprocess.Popen(argv, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            deadline = time.time() + 60
+            while time.time() < deadline and child.poll() is None and not (shot.exists() and shot.stat().st_size):
+                time.sleep(0.25)
+            time.sleep(0.5)
+            if child.poll() is None:
+                child.kill()
+            image = Image.open(shot).convert("RGB")
+            # Color management shifts the sentinel a little, so crop to what is far from magenta.
+            r, g, b = (band.point(lambda v, t=t: 255 if t(v) else 0) for band, t in zip(image.split(), (lambda v: v > 200, lambda v: v < 80, lambda v: v > 200)))
+            magenta = ImageChops.multiply(ImageChops.multiply(r, g), b)
+            box = ImageChops.invert(magenta).getbbox()
+            # The page's last row and column blend into the backdrop; leave them out.
+            box = (box[0], box[1], box[2] - 2, box[3] - 2)
+            image.crop(box).save(out / name)
+            print("wrote", out / name, f"{box[2] - box[0]}x{box[3] - box[1]}")
 
 
 def main():
@@ -174,23 +286,15 @@ def main():
     pages = {
         "desktop.png": desktop_page(trees, "purple"),
         "terminal.png": terminal_page(trees, "purple"),
+        "alucard.png": desktop_page(trees, "alucard", light=True),
         "accents.png": accents_page(trees),
     }
     if "--html" in sys.argv:
-        for name, doc in pages.items():
-            (out / name.replace(".png", ".html")).write_text(doc)
+        for name, page_doc in pages.items():
+            (out / name.replace(".png", ".html")).write_text(page_doc)
             print("wrote", out / name.replace(".png", ".html"))
         return
-    from playwright.sync_api import sync_playwright
-
-    with sync_playwright() as pw:
-        browser = pw.chromium.launch()
-        page = browser.new_page(device_scale_factor=2)
-        for name, doc in pages.items():
-            page.set_content(doc)
-            page.locator("body > div").first.screenshot(path=str(out / name))
-            print("wrote", out / name)
-        browser.close()
+    capture(pages, out)
 
 
 if __name__ == "__main__":

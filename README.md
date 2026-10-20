@@ -9,9 +9,11 @@ A Claude mod that redraws the conversation in the [Dracula](https://draculatheme
 ![claude-dracula in the desktop app](docs/desktop.png)
 
 <details>
-<summary>Terminal and accent colors</summary>
+<summary>Terminal, Alucard and accent colors</summary>
 
 ![claude-dracula in a terminal using the Dracula color scheme](docs/terminal.png)
+
+![The Alucard light theme, from /dracula light](docs/alucard.png)
 
 ![The four accent presets](docs/accents.png)
 
@@ -111,11 +113,11 @@ python3 scripts/banner.py docs
 
 ### Regenerate the screenshots
 
-`scripts/dump.test.tsx` prints every tree the mod draws for a sample conversation, and `scripts/screenshots.py` renders them in headless Chromium:
+`scripts/dump.test.tsx` prints every tree the mod draws for a sample conversation, and `scripts/screenshots.py` renders them in headless Chromium. It uses Playwright when installed, else a local Chrome with Pillow to crop:
 
 ```sh
 claude plugin test . > test-output.txt
-pip install playwright markdown && python3 -m playwright install chromium
+pip install pillow
 python3 scripts/screenshots.py test-output.txt docs
 ```
 
