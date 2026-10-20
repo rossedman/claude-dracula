@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>claude-dracula · Claude, after dark</title>
+<meta name="description" content="A Claude mod that redraws every prompt, reply and tool call in the Dracula color scheme. Terminal, desktop and VS Code.">
+<meta name="theme-color" content="#282A36">
+<meta property="og:type" content="website">
+<meta property="og:title" content="claude-dracula · Claude, after dark">
+<meta property="og:description" content="A Claude mod that redraws every prompt, reply and tool call in the Dracula color scheme.">
+<meta property="og:url" content="https://rossedman.github.io/claude-dracula/">
+<meta property="og:image" content="https://rossedman.github.io/claude-dracula/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://rossedman.github.io/claude-dracula/social-preview.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='7' fill='%2344475A'/%3E%3Cg transform='translate(12 12) scale(1.3) translate(-12 -12)'%3E%3Cpath fill='%23BD93F9' d='M12 9.2 L11.1 7.6 L10.7 9.6 C9.1 8.6 6.6 8.3 3.6 9.1 C5 10 5.6 11.4 5.5 13 C6.4 12.3 7.6 12.2 8.5 12.9 C8.9 13.9 9.8 14.5 10.7 14.5 L12 16.6 L13.3 14.5 C14.2 14.5 15.1 13.9 15.5 12.9 C16.4 12.2 17.6 12.3 18.5 13 C18.4 11.4 19 10 20.4 9.1 C17.4 8.3 14.9 8.6 13.3 9.6 L12.9 7.6 Z'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #282A36; --bg-dark: #21222C; --bg-darker: #191A21; --line: #44475A; --fg: #F8F8F2; --comment: #6272A4; --muted: #A9B1D6;
+    --cyan: #8BE9FD; --green: #50FA7B; --orange: #FFB86C; --pink: #FF79C6; --purple: #BD93F9; --red: #FF5555; --yellow: #F1FA8C;
+    --mono: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg-darker); color: var(--fg); font-family: var(--sans); font-size: 17px; line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  a { color: var(--cyan); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, kbd, pre { font-family: var(--mono); }
+  ::selection { background: rgba(189,147,249,.4); }
+  :focus-visible { outline: 2px solid var(--pink); outline-offset: 3px; border-radius: 6px; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+  .grad { background: linear-gradient(90deg, var(--purple), var(--pink)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  /* Nav */
+  nav { position: sticky; top: 0; z-index: 20; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); background: rgba(25,26,33,.72); border-bottom: 1px solid rgba(68,71,90,.6); }
+  nav .wrap { display: flex; align-items: center; gap: 28px; height: 62px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-weight: 700; font-size: 18px; color: var(--fg); }
+  .brand:hover { text-decoration: none; }
+  .brand svg { width: 30px; height: 30px; }
+  .links { display: flex; gap: 22px; margin-left: auto; font-size: 15px; }
+  .links a { color: var(--muted); }
+  .links a:hover { color: var(--fg); text-decoration: none; }
+  .gh { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border: 1px solid var(--line); border-radius: 999px; color: var(--fg) !important; }
+  .gh:hover { border-color: var(--purple); }
+  @media (max-width: 760px) { .links a:not(.gh) { display: none; } }
+
+  /* Hero */
+  .hero { position: relative; overflow: hidden; padding: 96px 0 72px;
+    background:
+      radial-gradient(800px 480px at 15% 10%, rgba(189,147,249,.20), transparent 70%),
+      radial-gradient(700px 420px at 95% 80%, rgba(255,121,198,.14), transparent 70%),
+      linear-gradient(180deg, #2B2D3B 0%, var(--bg) 55%, var(--bg-darker) 100%); }
+  #sky { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .moon { position: absolute; right: 9%; top: 56px; width: 110px; height: 110px; border-radius: 50%; box-shadow: inset -28px 12px 0 0 #F4F2DC;
+    filter: drop-shadow(0 0 22px rgba(241,250,140,.35)) drop-shadow(0 0 70px rgba(189,147,249,.25)); pointer-events: none; }
+  .bat-fly { position: absolute; fill: #4B4F6A; pointer-events: none; animation: fly linear infinite; }
+  @keyframes fly {
+    0% { transform: translate(-10vw, 0) scaleY(1); }
+    25% { transform: translate(25vw, -30px) scaleY(.6); }
+    50% { transform: translate(60vw, 10px) scaleY(1); }
+    75% { transform: translate(90vw, -20px) scaleY(.6); }
+    100% { transform: translate(120vw, 0) scaleY(1); }
+  }
+  .hero-grid { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 56px; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 14px; color: var(--muted); padding: 6px 14px; border: 1px solid rgba(98,114,164,.5); border-radius: 999px; background: rgba(25,26,33,.5); }
+  .eyebrow .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 0 rgba(80,250,123,.6); animation: pulse 2s infinite; }
+  @keyframes pulse { 70% { box-shadow: 0 0 0 8px rgba(80,250,123,0); } 100% { box-shadow: 0 0 0 0 rgba(80,250,123,0); } }
+  h1 { font-size: clamp(44px, 8vw, 92px); line-height: 1.02; letter-spacing: -0.04em; font-weight: 800; margin: 22px 0 0; }
+  .lede { max-width: 640px; font-size: clamp(18px, 2.2vw, 21px); color: var(--muted); margin: 24px 0 0; }
+  .lede b { color: var(--fg); font-weight: 600; }
+  .cta { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 34px; align-items: center; }
+  .install { display: flex; align-items: center; gap: 12px; max-width: 100%; min-width: 0; padding: 12px 12px 12px 18px; background: rgba(25,26,33,.85); border: 1px solid var(--line); border-radius: 12px; font-family: var(--mono); font-size: 15px; }
+  .install code { overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+  .install code::-webkit-scrollbar { display: none; }
+  .install .sigil { color: var(--pink); user-select: none; }
+  .copy { flex-shrink: 0; font: 600 13px var(--sans); color: var(--bg-darker); background: var(--purple); border: 0; border-radius: 8px; padding: 7px 12px; cursor: pointer; transition: background .2s; }
+  .copy:hover { background: var(--pink); }
+  .copy.done { background: var(--green); }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 12px; font-weight: 600; font-size: 15px; border: 1px solid var(--line); color: var(--fg); background: transparent; cursor: pointer; font-family: var(--sans); }
+  .btn:hover { border-color: var(--purple); text-decoration: none; }
+  .btn.primary { background: linear-gradient(90deg, var(--purple), var(--pink)); color: var(--bg-darker); border: 0; }
+  .btn.primary:hover { filter: brightness(1.08); }
+
+  /* Demo */
+  .stage { position: relative; }
+  .stage::before { content: ""; position: absolute; inset: 8% 6% -4%; background: radial-gradient(closest-side, rgba(189,147,249,.35), transparent); filter: blur(40px); z-index: 0; }
+  .controls { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin-bottom: 14px; font-size: 14px; color: var(--muted); }
+  .seg-ctl { display: inline-flex; padding: 3px; background: var(--bg-darker); border: 1px solid var(--line); border-radius: 10px; }
+  .seg-ctl button { font: 500 13px var(--sans); color: var(--muted); background: none; border: 0; padding: 6px 12px; border-radius: 7px; cursor: pointer; }
+  .seg-ctl button[aria-pressed="true"] { background: var(--line); color: var(--fg); }
+  .swatches { display: inline-flex; gap: 8px; align-items: center; }
+  .swatch { width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; box-shadow: 0 0 0 1px rgba(0,0,0,.3) inset; transition: transform .15s; }
+  .swatch:hover { transform: scale(1.12); }
+  .swatch[aria-pressed="true"] { border-color: var(--fg); }
+  .toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+  .toggle input { appearance: none; width: 36px; height: 20px; border-radius: 999px; background: var(--line); position: relative; cursor: pointer; margin: 0; transition: background .2s; }
+  .toggle input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--fg); transition: transform .2s; }
+  .toggle input:checked { background: var(--accent, var(--purple)); }
+  .toggle input:checked::after { transform: translateX(16px); }
+  .cmd-echo { font-family: var(--mono); font-size: 13px; color: var(--comment); margin-left: auto; }
+  .cmd-echo b { color: var(--fg); font-weight: 500; }
+
+  .window { position: relative; z-index: 1; border-radius: 16px; border: 1px solid rgba(98,114,164,.45); background: #1F1E1C; box-shadow: 0 40px 100px rgba(0,0,0,.55); overflow: hidden; transition: background .3s; }
+  .titlebar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,.06); }
+  .titlebar span { width: 12px; height: 12px; border-radius: 50%; background: #3a3833; }
+  .titlebar .t { flex: 1; text-align: center; font-size: 13px; color: #8d8a82; margin-right: 52px; }
+  .convo { padding: 22px 26px 22px; font-size: 15px; line-height: 1.55; color: #E8E6DF; min-height: 520px; display: flex; flex-direction: column; }
+  .log { flex: 1; }
+  .row { margin: 10px 0; animation: in .35s ease both; }
+  @keyframes in { from { opacity: 0; transform: translateY(6px); } }
+  .prompt { display: flex; justify-content: flex-end; }
+  .bubble { max-width: 80%; overflow-wrap: anywhere; background: var(--line); border: 1.5px solid var(--accent); border-radius: 10px; padding: 4px 11px; color: var(--fg); transition: border-color .3s; }
+  .tool { display: flex; gap: 8px; align-items: baseline; white-space: nowrap; min-width: 0; }
+  .tool .st { transition: color .3s; }
+  .tool b { color: var(--cyan); }
+  .tool .arg { color: var(--comment); overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .reply { display: flex; gap: 8px; align-items: flex-start; }
+  .avatar { width: 24px; height: 24px; flex-shrink: 0; display: grid; place-items: center; }
+  .avatar svg { width: 24px; height: 24px; }
+  .avatar .glyph { display: none; color: var(--accent); font-weight: 700; }
+  .card { flex: 1; min-width: 0; border: 1.5px solid var(--comment); border-radius: 10px; padding: 6px 12px; }
+  .card p { margin: .3em 0; }
+  .card pre { margin: .6em 0 .4em; padding: 10px 12px; background: rgba(0,0,0,.22); border: 1px solid rgba(98,114,164,.35); border-radius: 6px; font-size: 13px; line-height: 1.5; overflow-x: auto; color: #E8E6DF; }
+  .result { display: flex; gap: 8px; margin: -4px 0 10px 4px; animation: in .35s ease both; }
+  .result .g { color: var(--comment); }
+  .caret::after { content: "▍"; color: var(--accent); animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .spinner[hidden] { display: none; }
+  .spinner { display: flex; gap: 8px; align-items: center; margin: 14px 0 6px; min-height: 24px; letter-spacing: 0; }
+  .spinner .bar { font-family: var(--mono); letter-spacing: -1px; }
+  .spinner .on { color: var(--accent); transition: color .3s; }
+  .spinner .off { color: var(--line); }
+  .spinner .label { color: var(--pink); }
+  .footer-line { color: var(--comment); font-family: var(--mono); display: none; }
+  .footer-line .d { color: var(--accent); }
+  .band { margin-top: 14px; color: var(--comment); display: flex; gap: 8px; align-items: center; }
+  .band .dots span { margin-right: 4px; }
+  .composer { margin-top: 8px; border: 1px solid #3a3833; border-radius: 14px; padding: 13px 16px; color: #8d8a82; background: #2A2926; }
+
+  /* Terminal surface */
+  .window.terminal { background: var(--bg); }
+  .window.terminal .titlebar span { background: var(--line); }
+  .window.terminal .titlebar .t { color: var(--comment); font-family: var(--mono); }
+  .window.terminal .convo { font-family: var(--mono); font-size: 14px; color: var(--fg); }
+  .window.terminal .bubble, .window.terminal .card { border-radius: 8px; }
+  .window.terminal .avatar svg { display: none; }
+  .window.terminal .avatar .glyph { display: block; }
+  .window.terminal .card pre { background: transparent; border: 0; padding: 4px 0; }
+  .window.terminal .footer-line { display: block; }
+  .window.terminal .composer { border-radius: 0; border-color: var(--line); background: transparent; color: var(--comment); padding: 6px 10px; }
+  .window.terminal .composer::before { content: "> "; }
+
+  /* Sections */
+  section { padding: 96px 0; position: relative; }
+  section.alt { background: var(--bg-dark); border-top: 1px solid rgba(68,71,90,.5); border-bottom: 1px solid rgba(68,71,90,.5); }
+  .kicker { font-family: var(--mono); font-size: 14px; color: var(--pink); letter-spacing: .02em; }
+  h2 { font-size: clamp(32px, 4.6vw, 52px); line-height: 1.08; letter-spacing: -0.03em; margin: 10px 0 14px; font-weight: 800; }
+  .intro { max-width: 640px; color: var(--muted); margin: 0 0 48px; font-size: 18px; }
+
+  .features { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 18px; }
+  .feature { background: var(--bg); border: 1px solid rgba(68,71,90,.8); border-radius: var(--radius); padding: 22px; transition: border-color .25s, transform .25s; position: relative; overflow: hidden; }
+  .feature:hover { border-color: var(--purple); transform: translateY(-3px); }
+  .feature .viz { height: 64px; display: flex; align-items: center; margin-bottom: 18px; font-size: 14px; font-family: var(--mono); }
+  .feature h3 { margin: 0 0 6px; font-size: 18px; letter-spacing: -0.01em; }
+  .feature p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.55; }
+  .feature .where { margin-top: 14px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { font-family: var(--mono); font-size: 11.5px; color: var(--comment); border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; }
+  .play { display: inline-flex; align-items: center; gap: 10px; background: var(--line); color: var(--fg); border: 1px solid transparent; border-radius: 10px; padding: 8px 14px; cursor: pointer; font: 500 14px var(--sans); }
+  .play:hover { border-color: var(--pink); }
+  .play .eq { display: inline-flex; gap: 2px; align-items: flex-end; height: 14px; }
+  .play .eq i { width: 3px; background: var(--pink); height: 4px; border-radius: 1px; }
+  .play.playing .eq i { animation: eq .5s ease-in-out infinite alternate; }
+  .play.playing .eq i:nth-child(2) { animation-delay: .15s; } .play.playing .eq i:nth-child(3) { animation-delay: .3s; }
+  @keyframes eq { to { height: 14px; } }
+
+  /* Commands */
+  .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 48px; align-items: center; }
+  @media (max-width: 900px) { .two { grid-template-columns: minmax(0, 1fr); } }
+  .term { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: 0 30px 70px rgba(0,0,0,.4); }
+  .term .titlebar span { background: var(--line); }
+  .term .titlebar .t { color: var(--comment); font-family: var(--mono); }
+  .term pre { margin: 0; padding: 20px 22px 24px; font-size: 14.5px; line-height: 1.9; overflow-x: auto; }
+  .c { color: var(--comment); } .p { color: var(--pink); } .y { color: var(--yellow); } .cy { color: var(--cyan); } .gr { color: var(--green); } .pu { color: var(--purple); } .or { color: var(--orange); }
+
+  /* Palette */
+  .palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+  .chip-color { display: flex; flex-direction: column; justify-content: flex-start; text-align: left; background: var(--bg); border: 1px solid rgba(68,71,90,.8); border-radius: var(--radius); padding: 0; overflow: hidden; cursor: pointer; color: var(--fg); font-family: var(--sans); transition: transform .2s, border-color .2s; }
+  .chip-color:hover { transform: translateY(-3px); border-color: var(--comment); }
+  .chip-color .sw { height: 84px; position: relative; }
+  .chip-color .meta { padding: 12px 14px 14px; }
+  .chip-color .name { font-weight: 600; font-size: 15px; }
+  .chip-color .hex { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+  .chip-color .use { font-size: 13px; color: var(--comment); margin-top: 4px; line-height: 1.4; }
+  .chip-color .copied { position: absolute; inset: 0; display: grid; place-items: center; font: 600 13px var(--mono); color: var(--fg); background: rgba(25,26,33,.6); opacity: 0; transition: opacity .2s; }
+  .chip-color.flash .copied { opacity: 1; }
+
+  /* Surfaces */
+  .surfaces { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  @media (max-width: 800px) { .surfaces { grid-template-columns: 1fr; } }
+  .surface { background: var(--bg); border: 1px solid rgba(68,71,90,.8); border-radius: var(--radius); padding: 24px; }
+  .surface .ic { width: 44px; height: 44px; border-radius: 12px; background: var(--line); display: grid; place-items: center; color: var(--purple); margin-bottom: 16px; }
+  .surface h3 { margin: 0 0 6px; font-size: 18px; }
+  .surface p { margin: 0; color: var(--muted); font-size: 15px; }
+  .shots { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 800px) { .shots { grid-template-columns: 1fr; } }
+  .shots figure { margin: 0; background: var(--bg); border: 1px solid rgba(68,71,90,.8); border-radius: var(--radius); overflow: hidden; }
+  .shots img { display: block; width: 100%; height: auto; }
+  .shots figcaption { padding: 12px 16px; font-size: 14px; color: var(--comment); font-family: var(--mono); }
+
+  /* Install */
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .tabs button { font: 500 14px var(--sans); background: transparent; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 7px 16px; cursor: pointer; }
+  .tabs button[aria-selected="true"] { background: var(--purple); color: var(--bg-darker); border-color: var(--purple); }
+  .panel { display: none; }
+  .panel.on { display: block; }
+  .steps { margin: 0; padding: 0; list-style: none; counter-reset: s; }
+  .steps li { counter-increment: s; position: relative; padding: 0 0 22px 46px; color: var(--muted); }
+  .steps li::before { content: counter(s); position: absolute; left: 0; top: -2px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font: 700 14px var(--mono); background: var(--line); color: var(--purple); }
+  .steps b { color: var(--fg); font-weight: 600; }
+  .steps .install { margin-top: 10px; }
+  kbd { background: var(--line); border-radius: 5px; padding: 1px 6px; font-size: 13px; color: var(--fg); }
+
+  /* FAQ */
+  details { border-bottom: 1px solid var(--line); padding: 18px 0; }
+  summary { cursor: pointer; font-weight: 600; font-size: 18px; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; font-family: var(--mono); color: var(--pink); font-size: 22px; line-height: 1; transition: transform .2s; }
+  details[open] summary::after { transform: rotate(45deg); }
+  details p { color: var(--muted); margin: 10px 0 0; max-width: 760px; }
+
+  /* Closing */
+  .closing { text-align: center; padding: 120px 0; overflow: hidden;
+    background: radial-gradient(600px 300px at 50% 100%, rgba(255,121,198,.18), transparent 70%), radial-gradient(700px 360px at 50% 0%, rgba(189,147,249,.14), transparent 70%), var(--bg-darker); }
+  .closing h2 { font-size: clamp(36px, 6vw, 68px); }
+  .closing .cta { justify-content: center; }
+  footer { border-top: 1px solid var(--line); padding: 32px 0 48px; color: var(--comment); font-size: 14px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 28px; justify-content: space-between; }
+  footer a { color: var(--muted); }
+
+  @media (max-width: 640px) {
+    .hero { padding: 64px 0 48px; }
+    .moon { width: 70px; height: 70px; right: 6%; top: 30px; box-shadow: inset -18px 8px 0 0 #F4F2DC; }
+    .convo { padding: 16px; font-size: 14px; min-height: 480px; }
+    .cmd-echo { margin-left: 0; width: 100%; }
+    section { padding: 72px 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .bat-fly { display: none; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="bat" viewBox="3.4 7.4 17.2 9.4">
+    <path d="M12 9.2 L11.1 7.6 L10.7 9.6 C9.1 8.6 6.6 8.3 3.6 9.1 C5 10 5.6 11.4 5.5 13 C6.4 12.3 7.6 12.2 8.5 12.9 C8.9 13.9 9.8 14.5 10.7 14.5 L12 16.6 L13.3 14.5 C14.2 14.5 15.1 13.9 15.5 12.9 C16.4 12.2 17.6 12.3 18.5 13 C18.4 11.4 19 10 20.4 9.1 C17.4 8.3 14.9 8.6 13.3 9.6 L12.9 7.6 Z"/>
+  </symbol>
+  <symbol id="bat-tile" viewBox="0 0 24 24">
+    <rect width="24" height="24" rx="7" fill="#44475A"/>
+    <g transform="translate(12 12) scale(1.3) translate(-12 -12)">
+      <path fill="currentColor" d="M12 9.2 L11.1 7.6 L10.7 9.6 C9.1 8.6 6.6 8.3 3.6 9.1 C5 10 5.6 11.4 5.5 13 C6.4 12.3 7.6 12.2 8.5 12.9 C8.9 13.9 9.8 14.5 10.7 14.5 L12 16.6 L13.3 14.5 C14.2 14.5 15.1 13.9 15.5 12.9 C16.4 12.2 17.6 12.3 18.5 13 C18.4 11.4 19 10 20.4 9.1 C17.4 8.3 14.9 8.6 13.3 9.6 L12.9 7.6 Z"/>
+      <circle cx="11.1" cy="10.9" r=".55" fill="#44475A"/>
+      <circle cx="12.9" cy="10.9" r=".55" fill="#44475A"/>
+    </g>
+  </symbol>
+  <symbol id="spark-tile" viewBox="0 0 24 24">
+    <rect width="24" height="24" rx="7" fill="#44475A"/>
+    <path fill="currentColor" d="M12 4.5 L13.9 10.1 L19.5 12 L13.9 13.9 L12 19.5 L10.1 13.9 L4.5 12 L10.1 10.1 Z"/>
+  </symbol>
+  <symbol id="github" viewBox="0 0 16 16">
+    <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+  </symbol>
+</svg>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="claude-dracula home">
+      <svg style="color:var(--purple)"><use href="#bat-tile"/></svg>
+      <span>claude<span class="grad">-dracula</span></span>
+    </a>
+    <div class="links">
+      <a href="#features">Features</a>
+      <a href="#commands">Commands</a>
+      <a href="#palette">Palette</a>
+      <a href="#install">Install</a>
+      <a class="gh" href="https://github.com/rossedman/claude-dracula"><svg width="16" height="16"><use href="#github"/></svg>GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <svg id="sky" aria-hidden="true"></svg>
+  <div class="moon" aria-hidden="true"></div>
+  <svg class="bat-fly" style="top:120px;left:0;animation-duration:26s" width="40" height="22" aria-hidden="true"><use href="#bat"/></svg>
+  <svg class="bat-fly" style="top:200px;left:0;animation-duration:34s;animation-delay:-12s" width="26" height="14" aria-hidden="true"><use href="#bat"/></svg>
+  <svg class="bat-fly" style="top:70px;left:0;animation-duration:40s;animation-delay:-25s" width="18" height="10" aria-hidden="true"><use href="#bat"/></svg>
+
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow"><span class="pulse"></span>A Claude mod · Dracula color scheme</span>
+      <h1>Claude,<br><span class="grad">after dark.</span></h1>
+      <p class="lede"><b>claude-dracula</b> redraws your Claude conversation in the Dracula palette: purple, pink, cyan and green on a dark indigo-gray. Your prompts turn into bubbles, replies get a bat, and the working line says <span style="color:var(--pink)">Lurking…</span> <span style="color:var(--pink)">Haunting…</span> <span style="color:var(--pink)">Conjuring…</span></p>
+      <div class="cta">
+        <div class="install">
+          <span class="sigil">$</span>
+          <code id="cmd-hero">claude plugin install pixelstack --marketplace rossedman/claude-dracula</code>
+          <button class="copy" data-copy="#cmd-hero">Copy</button>
+        </div>
+        <a class="btn" href="#demo">See it move ↓</a>
+      </div>
+    </div>
+
+    <div class="stage" id="demo">
+      <div class="controls" role="group" aria-label="Demo settings">
+        <div class="seg-ctl" role="group" aria-label="Surface">
+          <button data-surface="desktop" aria-pressed="true">Desktop</button>
+          <button data-surface="terminal" aria-pressed="false">Terminal</button>
+        </div>
+        <div class="swatches" role="group" aria-label="Accent">
+          <button class="swatch" data-accent="purple" style="background:#BD93F9" aria-label="Purple accent" aria-pressed="true"></button>
+          <button class="swatch" data-accent="pink" style="background:#FF79C6" aria-label="Pink accent" aria-pressed="false"></button>
+          <button class="swatch" data-accent="cyan" style="background:#8BE9FD" aria-label="Cyan accent" aria-pressed="false"></button>
+          <button class="swatch" data-accent="green" style="background:#50FA7B" aria-label="Green accent" aria-pressed="false"></button>
+          <button class="swatch" data-accent="orange" style="background:#FFB86C" aria-label="Orange accent" aria-pressed="false"></button>
+        </div>
+        <label class="toggle"><input type="checkbox" id="spooky" checked> Spooky</label>
+        <button class="btn" id="replay" style="padding:6px 12px;font-size:13px">↻ Replay</button>
+        <span class="cmd-echo" id="echo" aria-live="polite">/pixelstack accent <b>purple</b></span>
+      </div>
+
+      <div class="window" id="window">
+        <div class="titlebar"><span></span><span></span><span></span><div class="t" id="wtitle">Claude</div></div>
+        <div class="convo">
+          <div class="log" id="log"></div>
+          <div class="spinner" id="spinner" hidden>
+            <span class="bar"><span class="on" id="bar-on"></span><span class="off" id="bar-off"></span></span>
+            <span class="label" id="spin-label"></span>
+          </div>
+          <div class="band">
+            <span class="dots" id="dots"></span>
+            <span>pixelstack · dracula</span>
+          </div>
+          <div class="composer">Reply to Claude…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="features" class="alt">
+  <div class="wrap">
+    <div class="kicker">// what it changes</div>
+    <h2>Every row, <span class="grad">re-fanged.</span></h2>
+    <p class="intro">claude-dracula hooks the conversation's render points and redraws each one in Dracula. Nothing about how Claude works changes, only how the conversation looks.</p>
+    <div class="features">
+      <article class="feature">
+        <div class="viz" style="justify-content:flex-end"><span style="background:var(--line);border:1.5px solid var(--purple);border-radius:10px;padding:4px 11px;font-family:var(--sans)">Fix the flaky test.</span></div>
+        <h3>Prompt bubbles</h3>
+        <p>Your prompt sits right-aligned on the current-line color with a rounded accent border.</p>
+        <div class="where"><span class="chip">terminal</span><span class="chip">desktop</span><span class="chip">vscode</span></div>
+      </article>
+      <article class="feature">
+        <div class="viz" style="gap:10px"><svg width="34" height="34" style="color:var(--purple)"><use href="#bat-tile"/></svg><span style="flex:1;border:1.5px solid var(--comment);border-radius:10px;padding:6px 11px;font-family:var(--sans);color:var(--muted)">Here's the fix…</span></div>
+        <h3>Bat avatar &amp; reply card</h3>
+        <p>Claude's replies get a bat (or a spark, with spooky off) and a rounded comment-colored card.</p>
+        <div class="where"><span class="chip">terminal</span><span class="chip">desktop</span><span class="chip">vscode</span></div>
+      </article>
+      <article class="feature">
+        <div class="viz" style="flex-direction:column;align-items:flex-start;gap:2px;font-size:13px">
+          <span><span style="color:var(--orange)">●</span> <b class="cy">Bash</b> <span class="c">npm test</span> <span class="or">running</span></span>
+          <span><span style="color:var(--green)">●</span> <b class="cy">Edit</b> <span class="c">src/app.ts</span> <span class="gr">done</span></span>
+          <span><span style="color:var(--red)">●</span> <b class="cy">Read</b> <span class="c">missing.md</span> <span style="color:var(--red)">error</span></span>
+        </div>
+        <h3>Tool calls</h3>
+        <p>A status dot (orange running, green done, red error, gray stopped), the tool in cyan, its first argument in comment gray.</p>
+        <div class="where"><span class="chip">terminal</span><span class="chip">desktop</span><span class="chip">vscode</span></div>
+      </article>
+      <article class="feature">
+        <div class="viz" style="flex-direction:column;align-items:flex-start;gap:2px;font-size:13px">
+          <span><span class="c">╰</span> ok  example.com/retry  0.412s</span>
+          <span><span style="color:var(--red)">╰</span> FAIL  TestBackoff</span>
+        </div>
+        <h3>Tool results</h3>
+        <p>The usual result, hung from a gutter mark that turns red when something breaks.</p>
+        <div class="where"><span class="chip">terminal</span><span class="chip">desktop</span><span class="chip">vscode</span></div>
+      </article>
+      <article class="feature">
+        <div class="viz" style="gap:10px"><span style="letter-spacing:-1px"><span class="pu">━━━━━</span><span style="color:var(--line)">━━━</span></span><span class="p feature-word">Lurking…</span></div>
+        <h3>Working line</h3>
+        <p>A segmented progress line fills as the turn moves from thinking to tools to answering, under a pink spooky word.</p>
+        <div class="where"><span class="chip">terminal</span><span class="chip">desktop</span><span class="chip">vscode</span></div>
+      </article>
+      <article class="feature">
+        <div class="viz"><span class="c"><span class="pu">◆</span> Fed for 14s</span></div>
+        <h3>Turn footer</h3>
+        <p>An accent diamond and how long Claude fed: Fed, Lurked, Haunted, Brooded, Feasted.</p>
+        <div class="where"><span class="chip">terminal</span></div>
+      </article>
+      <article class="feature">
+        <div class="viz"><button class="play" id="organ" aria-label="Play the organ sting"><span class="eq"><i></i><i></i><i></i></span>Hear the organ sting</button><audio id="organ-audio" src="assets/organ.wav" preload="none"></audio></div>
+        <h3>Organ sting</h3>
+        <p>An optional organ chord when a turn finishes. Synthesized for this project. <code>/pixelstack sound on</code></p>
+        <div class="where"><span class="chip">macOS</span></div>
+      </article>
+      <article class="feature">
+        <div class="viz" style="gap:8px"><span><span class="pu">●</span> <span class="p">●</span> <span class="cy">●</span> <span class="gr">●</span> <span class="or">●</span></span><span class="c">pixelstack · dracula</span></div>
+        <h3>Palette band</h3>
+        <p>The palette's dots above the prompt, led by your accent, so you always know the coffin is open.</p>
+        <div class="where"><span class="chip">terminal</span><span class="chip">desktop</span></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="commands">
+  <div class="wrap two">
+    <div>
+      <div class="kicker">// one command</div>
+      <h2>Tune it from <span class="grad">the prompt.</span></h2>
+      <p class="intro" style="margin-bottom:24px">Everything lives under <code>/pixelstack</code>. Settings persist across sessions, so pick an accent once and it sticks.</p>
+      <p style="color:var(--muted);margin:0">Accents take any of the five presets or your own hex color. Spooky mode is on by default; the sound is off until you ask for it.</p>
+    </div>
+    <div class="term">
+      <div class="titlebar"><span></span><span></span><span></span><div class="t">~/code · claude</div></div>
+<pre><span class="c"># turn the theme on or off</span>
+<span class="p">/pixelstack</span> <span class="gr">on</span>
+<span class="p">/pixelstack</span> <span class="gr">off</span>
+
+<span class="c"># swap the accent: purple · pink · cyan · green · orange · #hex</span>
+<span class="p">/pixelstack</span> <span class="cy">accent</span> <span class="y">pink</span>
+<span class="p">/pixelstack</span> <span class="cy">accent</span> <span class="y">#FF5555</span>
+
+<span class="c"># bat avatar and vampire words (on by default)</span>
+<span class="p">/pixelstack</span> <span class="cy">spooky</span> <span class="gr">off</span>
+
+<span class="c"># organ sting when a turn finishes (macOS, off by default)</span>
+<span class="p">/pixelstack</span> <span class="cy">sound</span> <span class="gr">on</span>
+
+<span class="c"># what's on right now</span>
+<span class="p">/pixelstack</span> <span class="cy">status</span></pre>
+    </div>
+  </div>
+</section>
+
+<section id="palette" class="alt">
+  <div class="wrap">
+    <div class="kicker">// the palette</div>
+    <h2>Straight from <span class="grad">Dracula.</span></h2>
+    <p class="intro">Every color comes from the <a href="https://draculatheme.com">Dracula</a> spec, so the mod sits right at home in a Dracula terminal or editor. Click a swatch to copy its hex.</p>
+    <div class="palette" id="swatches"></div>
+  </div>
+</section>
+
+<section id="surfaces">
+  <div class="wrap">
+    <div class="kicker">// where it haunts</div>
+    <h2>Terminal, desktop, <span class="grad">VS Code.</span></h2>
+    <p class="intro">One mod, every surface Claude Code draws on. The screenshots below come from the exact trees the mod renders.</p>
+    <div class="surfaces">
+      <div class="surface">
+        <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l6-5-6-5"/><path d="M12 19h8"/></svg></div>
+        <h3>Terminal</h3>
+        <p>The full set, including the turn footer. Pair it with Dracula for your terminal for the whole look.</p>
+      </div>
+      <div class="surface">
+        <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+        <h3>Desktop app</h3>
+        <p>Vector bat and spark avatars, bubbles, cards, tool rows and the palette band.</p>
+      </div>
+      <div class="surface">
+        <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></svg></div>
+        <h3>VS Code</h3>
+        <p>Prompts, replies, tool calls, results and the working line, right inside your editor.</p>
+      </div>
+    </div>
+    <div class="shots">
+      <figure><img src="desktop.png" alt="claude-dracula in the Claude desktop app: a purple prompt bubble, tool rows, a bat avatar beside a reply card, and the Haunting working line" loading="lazy" width="1760" height="1494"><figcaption>desktop · accent purple</figcaption></figure>
+      <figure><img src="terminal.png" alt="claude-dracula in a terminal using the Dracula color scheme" loading="lazy" width="1760" height="1450"><figcaption>terminal · accent purple</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section id="install" class="alt">
+  <div class="wrap two" style="align-items:start">
+    <div>
+      <div class="kicker">// install</div>
+      <h2>Invite it <span class="grad">in.</span></h2>
+      <p class="intro">A vampire can't enter unless invited. Thirty seconds, three ways.</p>
+    </div>
+    <div>
+      <div class="tabs" role="tablist" aria-label="Install method">
+        <button role="tab" aria-selected="true" aria-controls="p-prompt" id="t-prompt">In Claude Code</button>
+        <button role="tab" aria-selected="false" aria-controls="p-shell" id="t-shell">From a shell</button>
+        <button role="tab" aria-selected="false" aria-controls="p-desktop" id="t-desktop">Desktop app</button>
+      </div>
+      <div class="panel on" role="tabpanel" id="p-prompt" aria-labelledby="t-prompt">
+        <ol class="steps">
+          <li><b>At the prompt of a terminal session, run:</b>
+            <div class="install"><code id="cmd-prompt">/plugin install pixelstack --marketplace rossedman/claude-dracula</code><button class="copy" data-copy="#cmd-prompt">Copy</button></div></li>
+          <li><b>Answer <kbd>y</kbd></b> to add the marketplace.</li>
+          <li><b>Pick a scope.</b> That's it. Try <code>/pixelstack accent pink</code>.</li>
+        </ol>
+      </div>
+      <div class="panel" role="tabpanel" id="p-shell" aria-labelledby="t-shell">
+        <ol class="steps">
+          <li><b>Run:</b>
+            <div class="install"><span class="sigil">$</span><code id="cmd-shell">claude plugin install pixelstack --marketplace rossedman/claude-dracula</code><button class="copy" data-copy="#cmd-shell">Copy</button></div></li>
+          <li><b>Start Claude Code.</b> The conversation is already in Dracula.</li>
+        </ol>
+      </div>
+      <div class="panel" role="tabpanel" id="p-desktop" aria-labelledby="t-desktop">
+        <ol class="steps">
+          <li><b>Click <kbd>+</kbd></b> next to the prompt box, then <b>Plugins</b>.</li>
+          <li><b>Add marketplace</b> with:
+            <div class="install"><code id="cmd-desktop">rossedman/claude-dracula</code><button class="copy" data-copy="#cmd-desktop">Copy</button></div></li>
+          <li><b>Add plugin</b> and pick <code>pixelstack</code>.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap" style="max-width:860px">
+    <div class="kicker">// questions from the crypt</div>
+    <h2>FAQ</h2>
+    <details>
+      <summary>Does it change my terminal's colors?</summary>
+      <p>No. The mod colors its own elements: bubbles, cards, tool rows, the working line. For the full look, pair it with <a href="https://draculatheme.com">Dracula for your terminal</a>.</p>
+    </details>
+    <details>
+      <summary>Can I get the default rows back?</summary>
+      <p>Anytime. <code>/pixelstack off</code> turns the theme off, and expanded views (<kbd>ctrl</kbd>+<kbd>o</kbd>) always show the full default rows.</p>
+    </details>
+    <details>
+      <summary>I want the colors but not the bats.</summary>
+      <p><code>/pixelstack spooky off</code> swaps the bat for a four-point spark and puts the usual working words back.</p>
+    </details>
+    <details>
+      <summary>Does it work in the mobile app?</summary>
+      <p>The Claude mobile app runs the mod's commands, but it doesn't currently show the restyled rows. The organ sting plays on macOS only.</p>
+    </details>
+  </div>
+</section>
+
+<section class="closing">
+  <div class="wrap">
+    <h2>Give Claude <span class="grad">some fangs.</span></h2>
+    <div class="cta">
+      <div class="install">
+        <span class="sigil">$</span>
+        <code id="cmd-close">claude plugin install pixelstack --marketplace rossedman/claude-dracula</code>
+        <button class="copy" data-copy="#cmd-close">Copy</button>
+      </div>
+      <a class="btn primary" href="https://github.com/rossedman/claude-dracula"><svg width="16" height="16"><use href="#github"/></svg>Star on GitHub</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>MIT licensed · by <a href="https://github.com/rossedman">Ross Edman</a> · palette from <a href="https://github.com/dracula/dracula-theme">Dracula</a> (MIT)</span>
+    <span>An unofficial community mod, not affiliated with Anthropic or the Dracula theme.</span>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const C = {
+    background: '#282A36', currentLine: '#44475A', foreground: '#F8F8F2', comment: '#6272A4', cyan: '#8BE9FD', green: '#50FA7B',
+    orange: '#FFB86C', pink: '#FF79C6', purple: '#BD93F9', red: '#FF5555', yellow: '#F1FA8C',
+  }
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  // Stars over the hero.
+  const sky = document.getElementById('sky')
+  let seed = 11
+  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647)
+  let stars = ''
+  for (let i = 0; i < 140; i++) {
+    const x = (rand() * 100).toFixed(2), y = (rand() * 70).toFixed(2), r = rand() < 0.1 ? 1.5 : 0.5 + rand() * 0.7
+    const fill = rand() < 0.15 ? C.purple : rand() < 0.1 ? C.cyan : C.foreground
+    const dur = (2 + rand() * 4).toFixed(1)
+    stars += `<circle cx="${x}%" cy="${y}%" r="${r.toFixed(2)}" fill="${fill}" opacity="${(0.2 + rand() * 0.5).toFixed(2)}">` +
+      (reduced || rand() > 0.35 ? '' : `<animate attributeName="opacity" values=".15;.8;.15" dur="${dur}s" repeatCount="indefinite"/>`) + '</circle>'
+  }
+  sky.innerHTML = stars
+
+  // Copy buttons.
+  document.querySelectorAll('.copy').forEach(btn => btn.addEventListener('click', async () => {
+    const text = document.querySelector(btn.dataset.copy).textContent
+    try { await navigator.clipboard.writeText(text) } catch { const t = document.createElement('textarea'); t.value = text; document.body.append(t); t.select(); document.execCommand('copy'); t.remove() }
+    btn.textContent = 'Copied'; btn.classList.add('done')
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('done') }, 1400)
+  }))
+
+  // Palette swatches.
+  const palette = [
+    ['Background', 'background', 'your terminal background'], ['Current line', 'currentLine', 'prompt bubble, empty progress'],
+    ['Foreground', 'foreground', 'text'], ['Comment', 'comment', 'reply card, arguments, labels'],
+    ['Purple', 'purple', 'default accent'], ['Pink', 'pink', 'working label'], ['Cyan', 'cyan', 'tool names'],
+    ['Green', 'green', 'done'], ['Orange', 'orange', 'running'], ['Red', 'red', 'errors'], ['Yellow', 'yellow', 'the moon, here'],
+  ]
+  const sw = document.getElementById('swatches')
+  for (const [name, key, use] of palette) {
+    const b = document.createElement('button')
+    b.className = 'chip-color'
+    b.innerHTML = `<div class="sw" style="background:${C[key]}"><span class="copied">copied</span></div><div class="meta"><div class="name">${name}</div><div class="hex">${C[key]}</div><div class="use">${use}</div></div>`
+    b.setAttribute('aria-label', `Copy ${name} ${C[key]}`)
+    b.addEventListener('click', () => {
+      navigator.clipboard?.writeText(C[key]).catch(() => {})
+      b.classList.add('flash'); setTimeout(() => b.classList.remove('flash'), 900)
+    })
+    sw.append(b)
+  }
+
+  // Install tabs.
+  const tabs = [...document.querySelectorAll('[role=tab]')]
+  tabs.forEach(t => t.addEventListener('click', () => {
+    tabs.forEach(o => { o.setAttribute('aria-selected', o === t); document.getElementById(o.getAttribute('aria-controls')).classList.toggle('on', o === t) })
+  }))
+
+  // Organ sting.
+  const organ = document.getElementById('organ'), audio = document.getElementById('organ-audio')
+  organ.addEventListener('click', () => {
+    audio.currentTime = 0
+    audio.play().then(() => organ.classList.add('playing')).catch(() => {})
+  })
+  audio.addEventListener('ended', () => organ.classList.remove('playing'))
+
+  // The live demo.
+  const state = { surface: 'desktop', accent: 'purple', spooky: true }
+  const win = document.getElementById('window'), log = document.getElementById('log'), echo = document.getElementById('echo')
+  const spinner = document.getElementById('spinner'), barOn = document.getElementById('bar-on'), barOff = document.getElementById('bar-off'), spinLabel = document.getElementById('spin-label')
+  const spookyWords = ['Lurking', 'Brooding', 'Haunting', 'Conjuring', 'Skulking', 'Creeping', 'Summoning', 'Prowling', 'Scheming', 'Bewitching']
+  const plainWords = ['Thinking', 'Pondering', 'Working', 'Cooking', 'Musing']
+  const pastWords = ['Fed', 'Lurked', 'Haunted', 'Brooded', 'Conjured', 'Prowled', 'Feasted']
+
+  function applyAccent() {
+    const color = C[state.accent]
+    document.getElementById('demo').style.setProperty('--accent', color)
+    const order = [color, ...['purple', 'pink', 'cyan', 'green', 'orange'].map(k => C[k]).filter(c => c !== color)].slice(0, 5)
+    document.getElementById('dots').innerHTML = order.map(c => `<span style="color:${c}">●</span>`).join('')
+    document.querySelectorAll('.swatch').forEach(s => s.setAttribute('aria-pressed', s.dataset.accent === state.accent))
+  }
+  function applyAvatars() {
+    log.querySelectorAll('.avatar use').forEach(u => u.setAttribute('href', state.spooky ? '#bat-tile' : '#spark-tile'))
+    log.querySelectorAll('.avatar .glyph').forEach(g => (g.textContent = state.spooky ? '🦇' : '✦'))
+    log.querySelectorAll('.footer-word').forEach(f => (f.textContent = state.spooky ? 'Fed for 14s' : '14s'))
+  }
+  function setSpinner(filled, word) {
+    barOn.textContent = '━'.repeat(filled); barOff.textContent = '━'.repeat(8 - filled)
+    spinLabel.textContent = `${word}…`
+  }
+  function add(html, cls = 'row') {
+    const el = document.createElement('div'); el.className = cls; el.innerHTML = html; log.append(el); return el
+  }
+  function toolRow(name, arg, status) {
+    const s = { running: C.orange, done: C.green, error: C.red }[status]
+    return `<div class="tool"><span class="st" style="color:${s}">●</span><b>${name}</b><span class="arg">${arg}</span><span class="st st-word" style="color:${s}">${status}</span></div>`
+  }
+  function setStatus(row, status) {
+    const s = { running: C.orange, done: C.green }[status]
+    row.querySelectorAll('.st').forEach(e => (e.style.color = s)); row.querySelector('.st-word').textContent = status
+  }
+  const avatar = '<div class="avatar"><svg style="color:var(--accent)"><use href="#bat-tile"/></svg><span class="glyph">🦇</span></div>'
+  const replyText = "Here's a compact version. It doubles the delay each attempt, caps it, and adds <b>full jitter</b> so retries from many clients don't line up."
+  const code = `func Retry(ctx context.Context, n int, fn func() error) error {
+    d := 100 * time.Millisecond
+    for i := 0; i < n; i++ {
+        if err := fn(); err == nil {
+            return nil
+        }
+        time.Sleep(time.Duration(rand.Int63n(int64(d))))
+        d = min(d*2, 10*time.Second)
+    }
+    return errors.New("retries exhausted")
+}`
+
+  let timers = [], wordTimer = null, wordIndex = 0
+  const at = (ms, fn) => timers.push(setTimeout(fn, ms))
+  const words = () => (state.spooky ? spookyWords : plainWords)
+
+  function play() {
+    timers.forEach(clearTimeout); timers = []; clearInterval(wordTimer)
+    log.innerHTML = ''; spinner.hidden = true
+    if (reduced) return finalState()
+    let tool1, tool2, card
+    at(300, () => add('<div class="prompt"><div class="bubble">Write me a Go helper that retries with backoff and jitter.</div></div>'))
+    at(1100, () => {
+      spinner.hidden = false; wordIndex = 0; setSpinner(2, words()[0])
+      wordTimer = setInterval(() => { wordIndex++; spinLabel.textContent = words()[wordIndex % words().length] + '…' }, 1300)
+    })
+    at(1700, () => { setSpinner(3, words()[wordIndex % words().length]); tool1 = add(toolRow('Read', 'internal/retry/retry.go', 'running')); setSpinner(5, words()[wordIndex % words().length]) })
+    at(2600, () => { setStatus(tool1, 'done'); setSpinner(6, words()[wordIndex % words().length]) })
+    at(3100, () => {
+      setSpinner(7, words()[wordIndex % words().length])
+      const r = add(`<div class="reply">${avatar}<div class="card"><p class="caret"></p></div></div>`)
+      applyAvatars(); card = r.querySelector('.card')
+      typeOut(card.querySelector('p'), replyText, 1400, () => {
+        const pre = document.createElement('pre'); pre.textContent = code; card.append(pre); pre.animate?.([{ opacity: 0 }, { opacity: 1 }], 300)
+      })
+    })
+    at(5200, () => { setSpinner(5, words()[wordIndex % words().length]); tool2 = add(toolRow('Bash', 'go test ./internal/retry/...', 'running')) })
+    at(6600, () => { setStatus(tool2, 'done'); add('<span class="g">╰</span><span>ok&nbsp; example.com/retry/internal/retry&nbsp; 0.412s</span>', 'result'); setSpinner(7, words()[wordIndex % words().length]) })
+    at(7600, () => { setSpinner(8, words()[wordIndex % words().length]) })
+    at(8200, () => {
+      clearInterval(wordTimer); spinner.hidden = true
+      add('<span class="footer-line"><span class="d">◆</span> <span class="footer-word"></span></span>'); applyAvatars()
+    })
+    at(14000, play)
+  }
+  function typeOut(el, html, ms, done) {
+    // Types the reply word by word, keeping the inline markup intact.
+    const parts = html.split(/(\s+)/), step = ms / parts.length
+    let i = 0
+    const tick = () => {
+      i++; el.innerHTML = parts.slice(0, i).join('')
+      if (i < parts.length) timers.push(setTimeout(tick, step)); else { el.classList.remove('caret'); done() }
+    }
+    tick()
+  }
+  function finalState() {
+    add('<div class="prompt"><div class="bubble">Write me a Go helper that retries with backoff and jitter.</div></div>')
+    add(toolRow('Read', 'internal/retry/retry.go', 'done'))
+    const r = add(`<div class="reply">${avatar}<div class="card"><p>${replyText}</p></div></div>`)
+    const pre = document.createElement('pre'); pre.textContent = code; r.querySelector('.card').append(pre)
+    add(toolRow('Bash', 'go test ./internal/retry/...', 'done'))
+    add('<span class="g">╰</span><span>ok&nbsp; example.com/retry/internal/retry&nbsp; 0.412s</span>', 'result')
+    add('<span class="footer-line"><span class="d">◆</span> <span class="footer-word"></span></span>')
+    spinner.hidden = false; setSpinner(6, words()[2]); applyAvatars()
+  }
+
+  document.querySelectorAll('[data-surface]').forEach(b => b.addEventListener('click', () => {
+    state.surface = b.dataset.surface
+    win.classList.toggle('terminal', state.surface === 'terminal')
+    document.getElementById('wtitle').textContent = state.surface === 'terminal' ? '~/retry · claude' : 'Claude'
+    document.querySelectorAll('[data-surface]').forEach(o => o.setAttribute('aria-pressed', o === b))
+  }))
+  document.querySelectorAll('.swatch').forEach(b => b.addEventListener('click', () => {
+    state.accent = b.dataset.accent; applyAccent()
+    echo.innerHTML = `/pixelstack accent <b>${state.accent}</b>`
+  }))
+  document.getElementById('spooky').addEventListener('change', e => {
+    state.spooky = e.target.checked; applyAvatars()
+    if (!spinner.hidden) spinLabel.textContent = words()[wordIndex % words().length] + '…'
+    echo.innerHTML = `/pixelstack spooky <b>${state.spooky ? 'on' : 'off'}</b>`
+    document.querySelectorAll('.feature-word').forEach(f => (f.textContent = state.spooky ? 'Lurking…' : 'Thinking…'))
+  })
+  document.getElementById('replay').addEventListener('click', play)
+
+  applyAccent()
+  // Start the demo the first time it scrolls into view.
+  let started = false
+  new IntersectionObserver(([entry]) => {
+    if (entry.isIntersecting && !started) { started = true; play() }
+  }, { threshold: 0.25 }).observe(win)
+})()
+</script>
+</body>
+</html>

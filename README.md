@@ -1,4 +1,8 @@
+<p align="center"><a href="https://rossedman.github.io/claude-dracula/"><img src="docs/banner.png" alt="claude-dracula: your Claude conversation, after dark" width="100%"></a></p>
+
 # Pixelstack
+
+**[rossedman.github.io/claude-dracula](https://rossedman.github.io/claude-dracula/)**
 
 A Claude mod that redraws the conversation in the [Dracula](https://draculatheme.com) color scheme: purple, pink, cyan and green on a dark indigo-gray.
 
@@ -20,7 +24,7 @@ The Pixelstack elements in these images are drawn from the exact output of the m
 At the prompt of a terminal session:
 
 ```
-/plugin install pixelstack --marketplace rossedman/pixelstack
+/plugin install pixelstack --marketplace rossedman/claude-dracula
 ```
 
 Answer `y` to add the marketplace, then pick a scope.
@@ -28,10 +32,10 @@ Answer `y` to add the marketplace, then pick a scope.
 From a shell:
 
 ```sh
-claude plugin install pixelstack --marketplace rossedman/pixelstack
+claude plugin install pixelstack --marketplace rossedman/claude-dracula
 ```
 
-In the desktop app: click + next to the prompt box, then Plugins, Add marketplace with `rossedman/pixelstack`, then Add plugin.
+In the desktop app: click + next to the prompt box, then Plugins, Add marketplace with `rossedman/claude-dracula`, then Add plugin.
 
 ## What it changes
 
@@ -84,6 +88,19 @@ claude --plugin-dir .
 ```
 
 `.claude-plugin/types/` is written by Claude Code when it loads the mod and is git-ignored.
+
+### Regenerate the banner
+
+`scripts/banner.html` is the banner's source. `scripts/banner.py` renders it to `docs/banner.png` and `docs/social-preview.png` (1280×640, for the repository's social preview):
+
+```sh
+pip install playwright && python3 -m playwright install chromium
+python3 scripts/banner.py docs
+```
+
+### The site
+
+`docs/index.html` is the GitHub Pages site, a single self-contained page. Serve it from the `main` branch's `/docs` folder.
 
 ### Regenerate the screenshots
 
