@@ -1,26 +1,27 @@
-// Pixelstack palette: an earthy blocky-world look (grass, dirt, wood, stone, sky).
+// Pixelstack palette: the Dracula color scheme (https://draculatheme.com, MIT).
 export const colors = {
-  soil: '#1E1A14',
-  stone: '#3C3F44',
-  darkWood: '#3B2A1E',
-  lightStone: '#55595F',
-  grass: '#4F7232',
-  wood: '#6B5038',
-  sky: '#6FB7E8',
-  gold: '#E8B83A',
-  ember: '#D9553B',
-  bone: '#F1EDE3',
-  muted: '#BDB6A6',
+  background: '#282A36',
+  currentLine: '#44475A',
+  foreground: '#F8F8F2',
+  comment: '#6272A4',
+  cyan: '#8BE9FD',
+  green: '#50FA7B',
+  orange: '#FFB86C',
+  pink: '#FF79C6',
+  purple: '#BD93F9',
+  red: '#FF5555',
+  yellow: '#F1FA8C',
 } as const
 
 export const accents: Record<string, string> = {
-  leaf: '#79B33D',
-  gold: '#E8B83A',
-  sky: '#6FB7E8',
-  ember: '#D9553B',
+  purple: colors.purple,
+  pink: colors.pink,
+  cyan: colors.cyan,
+  green: colors.green,
+  orange: colors.orange,
 }
 
-export const defaultAccent = accents.leaf ?? '#79B33D'
+export const defaultAccent: string = colors.purple
 
 /** Turns a preset name or a #rgb / #rrggbb hex into a color, or null. */
 export function parseAccent(input: string): string | null {
@@ -30,8 +31,8 @@ export function parseAccent(input: string): string | null {
   return /^#([0-9a-f]{3}|[0-9a-f]{6})$/.test(value) ? value.toUpperCase() : null
 }
 
-/** Filled blocks of the 8-block progress bar for each turn mode. */
-export const modeBlocks: Record<string, number> = {
+/** Filled segments of the progress line for each turn mode. */
+export const modeSegments: Record<string, number> = {
   requesting: 2,
   thinking: 3,
   'tool-input': 5,
@@ -39,4 +40,4 @@ export const modeBlocks: Record<string, number> = {
   responding: 7,
 }
 
-export const BLOCKS = 8
+export const SEGMENTS = 8

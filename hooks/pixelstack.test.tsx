@@ -75,7 +75,8 @@ test('the spinner fills its blocks by mode', async ($, on) => {
     surface: 'terminal',
     props: { word: 'Working', message: null, suffix: '…', mode: 'tool-use' },
   })
-  expect((await ui.find({ type: 'Text', text: /^█+$/ }))?.text).toBe('██████')
+  const lines = await ui.findAll({ type: 'Text', text: /^━+$/ })
+  expect(lines.map(line => line.text).slice(-2)).toEqual(['━━━━━━', '━━'])
   expect((await ui.find({ type: 'Text', text: /Working/ }))?.text).toBe('Working')
   await ui.unmount()
 })
@@ -96,15 +97,23 @@ test('an accent is taken by name or hex, and a bad one is refused', async ($, on
   engine(on)
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
 
-  expect((await $.command.run(run('accent gold'))).text).toContain('#E8B83A')
+  expect((await $.command.run(run('accent pink'))).text).toContain('#FF79C6')
   expect((await $.command.run(run('accent #12ab34'))).text).toContain('#12AB34')
   expect((await $.command.run(run('accent plaid'))).text).toContain('Unknown accent')
 })
 
 test('saved settings come back at the next session', async ($, on) => {
-  engine(on, { settings: { enabled: false, accent: '#6FB7E8' } })
+  engine(on, { settings: { enabled: false, accent: '#8BE9FD' } })
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
 
   const status = await $.command.run(run('status'))
-  expect(status.text).toBe('Pixelstack is off, accent #6FB7E8.')
+  expect(status.text).toBe('Pixelstack is off, accent #8BE9FD.')
+})
+
+test('an accent saved by the old palette moves to Dracula purple', async ($, on) => {
+  engine(on, { settings: { enabled: true, accent: '#79B33D' } })
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+
+  const status = await $.command.run(run('status'))
+  expect(status.text).toBe('Pixelstack is on, accent #BD93F9.')
 })

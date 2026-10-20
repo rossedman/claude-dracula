@@ -1,19 +1,19 @@
 # Pixelstack
 
-A Claude mod that redraws the conversation in a chunky pixel style with an earthy blocky-world palette: grass, dirt, wood, stone and sky.
+A Claude mod that redraws the conversation in the [Dracula](https://draculatheme.com) color scheme: purple, pink, cyan and green on a dark indigo-gray.
 
 ![Pixelstack in the desktop app](docs/desktop.png)
 
 <details>
 <summary>Terminal and accent colors</summary>
 
-![Pixelstack in the terminal](docs/terminal.png)
+![Pixelstack in a terminal using the Dracula color scheme](docs/terminal.png)
 
 ![The four accent presets](docs/accents.png)
 
 </details>
 
-The Pixelstack elements in these images are drawn from the exact output of the mod's render hooks; the window, prompt box and fonts around them are a neutral stand-in for the app. See [Regenerate the screenshots](#regenerate-the-screenshots).
+The Pixelstack elements in these images are drawn from the exact output of the mod's render hooks; the window, prompt box and fonts around them are a stand-in for the app (the terminal image assumes a Dracula terminal background). See [Regenerate the screenshots](#regenerate-the-screenshots).
 
 ## Install
 
@@ -37,37 +37,39 @@ In the desktop app: click + next to the prompt box, then Plugins, Add marketplac
 
 | Site | Drawing | Surfaces |
 | --- | --- | --- |
-| Your prompt | Grass-green bubble, right-aligned, bold outline | terminal, desktop, vscode |
-| Claude's reply | Pixel spark avatar + wood-framed card around the reply | terminal, desktop, vscode |
-| Tool calls | Status block (running / done / error / stopped), tool name, first argument | terminal, desktop, vscode |
-| Working line | 8-block bar that fills as the turn moves along | terminal, desktop, vscode |
-| Turn footer | Block + duration | terminal |
-| Above the prompt | Accent swatch + "Pixelstack" | terminal, desktop |
+| Your prompt | Current-line bubble with a rounded accent border, right-aligned | terminal, desktop, vscode |
+| Claude's reply | Spark avatar + rounded comment-colored card around the reply | terminal, desktop, vscode |
+| Tool calls | Status dot (orange running, green done, red error, gray stopped), tool in cyan, first argument in comment gray | terminal, desktop, vscode |
+| Working line | Segmented progress line in the accent, label in pink | terminal, desktop, vscode |
+| Turn footer | Accent diamond + duration | terminal |
+| Above the prompt | Palette dots + "pixelstack · dracula" | terminal, desktop |
 
-Expanded views (ctrl+o) always show the full default rows. The Claude mobile app runs the mod's commands but does not currently show its restyled rows.
+Expanded views (ctrl+o) always show the full default rows. The Claude mobile app runs the mod's commands but does not currently show its restyled rows. Pixelstack colors its own elements; for the full look, pair it with a Dracula theme for your terminal.
 
 ## Commands
 
 - `/pixelstack on` / `/pixelstack off`
-- `/pixelstack accent <leaf|gold|sky|ember|#hex>`
+- `/pixelstack accent <purple|pink|cyan|green|orange|#hex>`
 - `/pixelstack status`
 
 Settings persist across sessions.
 
 ## Palette
 
-| Token | Hex |
-| --- | --- |
-| soil (outlines) | `#1E1A14` |
-| stone | `#3C3F44` |
-| dark wood | `#3B2A1E` |
-| grass (your messages) | `#4F7232` |
-| leaf (default accent) | `#79B33D` |
-| wood (reply frame) | `#6B5038` |
-| sky | `#6FB7E8` |
-| gold | `#E8B83A` |
-| ember | `#D9553B` |
-| bone (text) | `#F1EDE3` |
+From [Dracula](https://github.com/dracula/dracula-theme) (MIT).
+
+| Token | Hex | Used for |
+| --- | --- | --- |
+| background | `#282A36` | terminal background (yours) |
+| current line | `#44475A` | prompt bubble, empty progress |
+| foreground | `#F8F8F2` | text |
+| comment | `#6272A4` | reply card border, arguments, labels |
+| purple | `#BD93F9` | default accent |
+| pink | `#FF79C6` | working label |
+| cyan | `#8BE9FD` | tool names |
+| green | `#50FA7B` | done |
+| orange | `#FFB86C` | running |
+| red | `#FF5555` | error |
 
 ## Develop
 

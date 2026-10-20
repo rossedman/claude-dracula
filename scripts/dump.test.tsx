@@ -62,7 +62,7 @@ const SITES = [
   },
 ] as const
 
-for (const accent of ['leaf', 'gold', 'sky', 'ember']) {
+for (const accent of ['purple', 'pink', 'cyan', 'green']) {
   test(`dump (${accent})`, async ($, on) => {
     mock.store(on, {})
     on('command.register', () => ({ value: { command: 'pixelstack' } }))

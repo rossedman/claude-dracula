@@ -3,13 +3,16 @@ import type { Register } from 'claude-code'
 
 import type { PixelstackSettings } from '../types'
 import { sparkTile } from './icons'
-import { BLOCKS, accents, colors, defaultAccent, modeBlocks, parseAccent } from './tokens'
+import { SEGMENTS, accents, colors, defaultAccent, modeSegments, parseAccent } from './tokens'
 
 const STORE_KEY = 'settings'
 const settings = atom({ plugin: 'pixelstack', key: 'settings' } as const, {
   enabled: true,
   accent: defaultAccent,
 } as PixelstackSettings)
+
+// Accents saved by the earlier blocky palette; they move to the Dracula default.
+const RETIRED_ACCENTS = new Set(['#79B33D', '#E8B83A', '#6FB7E8', '#D9553B'])
 
 const PROMPT_ORIGINS = new Set(['composer', 'bridge', 'sdk'])
 
@@ -39,7 +42,10 @@ export const register: Register = on => {
     if (saved && typeof saved === 'object') {
       await update($, settings, current => ({
         enabled: typeof saved.enabled === 'boolean' ? saved.enabled : current.enabled,
-        accent: typeof saved.accent === 'string' ? saved.accent : current.accent,
+        accent:
+          typeof saved.accent === 'string' && !RETIRED_ACCENTS.has(saved.accent)
+            ? saved.accent
+            : current.accent,
       }))
     }
     await $.command.register({
@@ -76,9 +82,9 @@ export const register: Register = on => {
     return { text: `Pixelstack is ${now.enabled ? 'on' : 'off'}, accent ${now.accent}.` }
   })
 
-  // The person's own prompt: a grass bubble, right-aligned, with a hard outline.
+  // The person's own prompt: a current-line bubble with a rounded accent border.
   on('ui.render', { component: 'UserMessage' }, async ($, e, next) => {
-    const { enabled } = await read($, settings)
+    const { enabled, accent } = await read($, settings)
     if (!enabled || e.props.isExpanded || !PROMPT_ORIGINS.has(e.props.origin.kind)) {
       return next(e)
     }
@@ -86,14 +92,14 @@ export const register: Register = on => {
 
     return (
       <Box flexDirection="row" justifyContent="flex-end" marginY={1}>
-        <Box borderStyle="bold" borderColor={colors.soil} backgroundColor={colors.grass} paddingX={1}>
-          <Text color={colors.bone}>{e.props.text}</Text>
+        <Box borderStyle="round" borderColor={accent} backgroundColor={colors.currentLine} paddingX={1}>
+          <Text color={colors.foreground}>{e.props.text}</Text>
         </Box>
       </Box>
     )
   })
 
-  // Claude's reply: a pixel avatar on the first block, the reply in a wood-framed card.
+  // Claude's reply: a spark avatar on the first block, the reply in a rounded comment-colored card.
   on('ui.render', { component: 'AssistantMessage' }, async ($, e, next) => {
     const { enabled, accent } = await read($, settings)
     if (!enabled || e.props.isSummary) return next(e)
@@ -106,7 +112,7 @@ export const register: Register = on => {
     } else if (e.surface === 'terminal') {
       avatar = (
         <Text color={accent} bold>
-          ▣
+          ✦
         </Text>
       )
     } else {
@@ -117,57 +123,63 @@ export const register: Register = on => {
     return (
       <Box flexDirection="row" gap={1}>
         {avatar}
-        <Box flexGrow={1} borderStyle="bold" borderColor={colors.wood} paddingX={1}>
+        <Box flexGrow={1} borderStyle="round" borderColor={colors.comment} paddingX={1}>
           <Markdown text={e.props.text} />
         </Box>
       </Box>
     )
   })
 
-  // The working line: an 8-block bar that fills as the turn moves along.
+  // The working line: a segmented progress line that fills as the turn moves along.
   on('ui.render', { component: 'Spinner' }, async ($, e, next) => {
     const { enabled, accent } = await read($, settings)
     if (!enabled) return next(e)
     const { Box, Text } = $.ui.resolve(e)
-    const filled = modeBlocks[e.props.mode] ?? 1
+    const filled = modeSegments[e.props.mode] ?? 1
     const label = e.props.message ?? e.props.word
 
     return (
       <Box flexDirection="row" gap={1}>
-        <Text color={accent}>{'█'.repeat(filled)}</Text>
-        <Text color={colors.wood}>{'░'.repeat(BLOCKS - filled)}</Text>
-        <Text color={colors.muted}>{label}</Text>
+        <Text>
+          <Text color={accent}>{'━'.repeat(filled)}</Text>
+          <Text color={colors.currentLine}>{'━'.repeat(SEGMENTS - filled)}</Text>
+        </Text>
+        <Text color={colors.pink}>{label}</Text>
       </Box>
     )
   })
 
-  // A tool call: a compact chip with a status block, the tool and its argument.
+  // A tool call: a status dot, the tool in cyan, its argument in comment gray.
   on('ui.render', { component: 'ToolUse' }, async ($, e, next) => {
-    const { enabled, accent } = await read($, settings)
+    const { enabled } = await read($, settings)
     if (!enabled || e.props.isExpanded) return next(e)
     const { Box, Text } = $.ui.resolve(e)
     const status = e.props.isErrored
-      ? { color: colors.ember, word: 'error' }
+      ? { color: colors.red, word: 'error' }
       : e.props.isInterrupted
-        ? { color: colors.muted, word: 'stopped' }
+        ? { color: colors.comment, word: 'stopped' }
         : e.props.isRunning
-          ? { color: accent, word: 'running' }
-          : { color: colors.sky, word: 'done' }
+          ? { color: colors.orange, word: 'running' }
+          : { color: colors.green, word: 'done' }
     const arg = summarize(e.props.input)
 
     return (
       <Box flexDirection="row" gap={1}>
-        <Text color={status.color}>■</Text>
-        <Text bold>{e.props.tool}</Text>
-        {arg.length > 0 && <Text color={colors.muted} wrap="truncate-end">{arg}</Text>}
-        <Text color={status.color} dimColor>
-          {status.word}
+        <Text color={status.color}>●</Text>
+        <Text color={colors.cyan} bold>
+          {e.props.tool}
         </Text>
+        {arg.length > 0 && (
+          <Text color={colors.comment} wrap="truncate-end">
+            {arg}
+          </Text>
+        )}
+        <Text color={status.color}>{status.word}</Text>
       </Box>
     )
   })
 
-  // The line closing a turn (terminal): a block and the duration.
+  // The line closing a turn (terminal): a diamond and the duration.
   on('ui.render', { component: 'TurnDuration' }, async ($, e, next) => {
     const { enabled, accent } = await read($, settings)
     if (!enabled || e.props.isExpanded || e.props.waitingFor) return next(e)
@@ -176,22 +188,28 @@ export const register: Register = on => {
     const shown = seconds >= 60 ? `${Math.floor(seconds / 60)}m ${seconds % 60}s` : `${seconds}s`
 
     return (
-      <Text color={colors.muted}>
-        <Text color={accent}>■</Text> {shown}
+      <Text color={colors.comment}>
+        <Text color={accent}>◆</Text> {shown}
       </Text>
     )
   })
 
-  // The band above the prompt: an accent swatch and the theme's name.
+  // The band above the prompt: the palette's dots and the theme's name.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     const { enabled, accent } = await read($, settings)
     if (!enabled || e.props.hasSurvey) return next(e)
     const { Box, Text } = $.ui.resolve(e)
+    const palette = [colors.purple, colors.pink, colors.cyan, colors.green, colors.orange]
+    const dots = [accent, ...palette.filter(color => color !== accent)].slice(0, 5)
 
     return (
       <Box flexDirection="row" gap={1}>
-        <Text color={accent}>██</Text>
-        <Text color={colors.muted}>Pixelstack</Text>
+        <Text>
+          {dots.map(color => (
+            <Text color={color}>● </Text>
+          ))}
+        </Text>
+        <Text color={colors.comment}>pixelstack · dracula</Text>
       </Box>
     )
   })

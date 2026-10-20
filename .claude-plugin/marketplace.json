@@ -1,6 +1,6 @@
 {
   "name": "pixelstack",
-  "description": "Pixelstack: a chunky pixel, blocky-world theme for Claude.",
+  "description": "Pixelstack: restyles the Claude conversation in the Dracula color scheme.",
   "owner": {
     "name": "Ross Edman"
   },
