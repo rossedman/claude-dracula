@@ -1,0 +1,7 @@
+{
+  "name": "pixelstack",
+  "version": "0.1.0",
+  "description": "Redraws the Claude conversation in a chunky pixel style with an earthy blocky-world palette.",
+  "author": { "name": "Ross Edman" },
+  "types": "./types/index.d.ts"
+}

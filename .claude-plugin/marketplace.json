@@ -1,0 +1,13 @@
+{
+  "name": "pixelstack",
+  "description": "Pixelstack: a chunky pixel, blocky-world theme for Claude.",
+  "owner": {
+    "name": "Ross Edman"
+  },
+  "plugins": [
+    {
+      "name": "pixelstack",
+      "source": "./"
+    }
+  ]
+}
